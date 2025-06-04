@@ -1,3 +1,6 @@
+> [!WARNING]
+>  In construction, expect breaking changes
+
 # dspy-kit
 
 [![PyPI version](https://badge.fury.io/py/dspy-kit.svg)](https://badge.fury.io/py/dspy-kit)
@@ -48,7 +51,7 @@ dspy.configure(lm=lm)
 class QASystem(dspy.Module):
     def __init__(self):
         self.qa = dspy.ChainOfThought("question -> answer")
-    
+
     def forward(self, question):
         return self.qa(question=question)
 
@@ -57,7 +60,7 @@ qa_system = QASystem()
 
 # Individual graders
 accuracy_grader = ExactMatchGrader(
-    pred="answer", 
+    pred="answer",
     ideal="gold_answer"
 )
 
@@ -144,7 +147,7 @@ custom_grader = PythonGrader("""
 def grade(sample, item):
     output = sample.get("output_text", "")
     reference = item.get("reference_answer", "")
-    
+
     # Custom scoring logic
     score = calculate_custom_similarity(output, reference)
     return score
@@ -186,7 +189,7 @@ class CustomerSupportAgent(dspy.Module):
     def __init__(self):
         self.classifier = dspy.Predict("query -> intent")
         self.responder = dspy.Predict("query, intent -> response")
-    
+
     def forward(self, query):
         intent = self.classifier(query=query).intent
         response = self.responder(query=query, intent=intent).response
@@ -210,14 +213,14 @@ async def evaluate_large_dataset():
         prompt_template="Rate this response (1-5): {{sample.output_text}}",
         range=[1, 5]
     )
-    
+
     # Batch evaluation with concurrency control
     scores = await grader.batch_evaluate(
         examples=large_dataset,
         predictions=model_predictions,
         max_concurrent=10
     )
-    
+
     return sum(scores) / len(scores)
 
 # Run async evaluation
@@ -235,17 +238,17 @@ graders:
     type: ExactMatchGrader
     pred: answer
     ideal: gold_answer
-    
+
   quality:
     type: ScoreModelGrader
     prompt_template: "Rate this answer quality (1-5): {{sample.output_text}}"
     model: gpt-4o-mini
     range: [1, 5]
     pass_threshold: 4.0
-    
+
   safety:
     type: SafetyGrader
-    
+
 composite:
   weights:
     accuracy: 0.5
@@ -336,7 +339,7 @@ advanced_grader = CompositeGrader({
 ```python
 def custom_metric(example, pred, trace=None):
     grader = ScoreModelGrader(...)
-    
+
     if trace is not None:
         # Optimization mode - validate intermediate steps
         if not validate_reasoning_steps(trace):
@@ -355,7 +358,7 @@ classification_metric = CompositeGrader({
     "confidence": (ConfidenceGrader(), 0.3)
 })
 
-# For generation tasks  
+# For generation tasks
 generation_metric = CompositeGrader({
     "relevance": (RelevanceGrader(), 0.3),
     "quality": (ScoreModelGrader(), 0.3),
@@ -370,14 +373,14 @@ generation_metric = CompositeGrader({
 # Test your graders before production use
 def test_grader():
     grader = ScoreModelGrader(...)
-    
+
     # Test cases
     test_cases = [
         (good_example, good_prediction, "Should score high"),
         (good_example, bad_prediction, "Should score low"),
         (edge_case_example, any_prediction, "Should handle gracefully")
     ]
-    
+
     for example, pred, description in test_cases:
         score = grader(example, pred)
         print(f"{description}: {score:.3f}")

@@ -94,22 +94,29 @@ class PrecisionGrader(ClassificationGrader):
     Measures the accuracy of positive predictions.
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._accumulated_preds = []
+        self._accumulated_trues = []
+        self._use_batch_mode = kwargs.get('use_batch_mode', False)
+
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         try:
             pred_label, true_label = self._extract_labels(example, pred)
-            # if pred_label != true_label and not pred_label.startswith('pred'):
-            # if pred_label != true_label and pred_label.startswith('pred'):
-            #     # print current class name
-            #     print("TMPTMPTMPTMPTMPTMPTMPTMPT")
-            #     print(f"pred: {pred_label}")
-            #     print(f"true: {true_label}")
-            #     print("FFFFFFFFFFFFFFFFFF")
 
-            # For single example, calculate binary precision
-            if pred_label == true_label:
-                precision = 1.0
+            # If batch mode is enabled, accumulate and return batch precision
+            if self._use_batch_mode:
+                self._accumulated_preds.append(pred_label)
+                self._accumulated_trues.append(true_label)
+                
+                # Calculate precision on accumulated data
+                precision = self._calculate_precision(self._accumulated_trues, self._accumulated_preds)
             else:
-                precision = 0.0
+                # For single example, calculate instance-level precision
+                if pred_label == true_label:
+                    precision = 1.0
+                else:
+                    precision = 0.0
 
             if trace is None:  # Evaluation mode
                 return precision
@@ -120,6 +127,11 @@ class PrecisionGrader(ClassificationGrader):
         except Exception as e:
             print(f"PrecisionGrader error: {e}")
             return 0.0 if trace is None else False
+
+    def reset_accumulator(self):
+        """Reset the accumulated predictions and true labels."""
+        self._accumulated_preds = []
+        self._accumulated_trues = []
 
     def batch_calculate(self, examples: list[Any], predictions: list[Any]) -> float:
         """Calculate precision over a batch of examples."""
@@ -204,15 +216,29 @@ class RecallGrader(ClassificationGrader):
     Measures the ability to find all positive instances.
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._accumulated_preds = []
+        self._accumulated_trues = []
+        self._use_batch_mode = kwargs.get('use_batch_mode', False)
+
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         try:
             pred_label, true_label = self._extract_labels(example, pred)
 
-            # For single example, calculate binary recall
-            if pred_label == true_label:
-                recall = 1.0
+            # If batch mode is enabled, accumulate and return batch recall
+            if self._use_batch_mode:
+                self._accumulated_preds.append(pred_label)
+                self._accumulated_trues.append(true_label)
+                
+                # Calculate recall on accumulated data
+                recall = self._calculate_recall(self._accumulated_trues, self._accumulated_preds)
             else:
-                recall = 0.0
+                # For single example, calculate instance-level recall
+                if pred_label == true_label:
+                    recall = 1.0
+                else:
+                    recall = 0.0
 
             if trace is None:  # Evaluation mode
                 return recall
@@ -223,6 +249,11 @@ class RecallGrader(ClassificationGrader):
         except Exception as e:
             print(f"RecallGrader error: {e}")
             return 0.0 if trace is None else False
+
+    def reset_accumulator(self):
+        """Reset the accumulated predictions and true labels."""
+        self._accumulated_preds = []
+        self._accumulated_trues = []
 
     def batch_calculate(self, examples: list[Any], predictions: list[Any]) -> float:
         """Calculate recall over a batch of examples."""
@@ -307,15 +338,29 @@ class F1Grader(ClassificationGrader):
     Harmonic mean of precision and recall.
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._accumulated_preds = []
+        self._accumulated_trues = []
+        self._use_batch_mode = kwargs.get('use_batch_mode', False)
+
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         try:
             pred_label, true_label = self._extract_labels(example, pred)
 
-            # For single example, calculate binary F1
-            if pred_label == true_label:
-                f1 = 1.0
+            # If batch mode is enabled, accumulate and return batch F1
+            if self._use_batch_mode:
+                self._accumulated_preds.append(pred_label)
+                self._accumulated_trues.append(true_label)
+                
+                # Calculate F1 on accumulated data
+                f1 = self._calculate_f1(self._accumulated_trues, self._accumulated_preds)
             else:
-                f1 = 0.0
+                # For single example, calculate instance-level F1
+                if pred_label == true_label:
+                    f1 = 1.0
+                else:
+                    f1 = 0.0
 
             if trace is None:  # Evaluation mode
                 return f1
@@ -326,6 +371,11 @@ class F1Grader(ClassificationGrader):
         except Exception as e:
             print(f"F1Grader error: {e}")
             return 0.0 if trace is None else False
+
+    def reset_accumulator(self):
+        """Reset the accumulated predictions and true labels."""
+        self._accumulated_preds = []
+        self._accumulated_trues = []
 
     def batch_calculate(self, examples: list[Any], predictions: list[Any]) -> float:
         """Calculate F1 score over a batch of examples."""
@@ -438,11 +488,12 @@ class ClassificationMetricsGrader(CompositeGrader):
 
         # Create individual graders
         grader_config = {"average": average, **grader_kwargs}
+        batch_grader_config = {"average": average, "use_batch_mode": True, **grader_kwargs}
         graders = {
             "accuracy": (AccuracyGrader(**grader_config), weights.get("accuracy", 0.3)),
-            "precision": (PrecisionGrader(**grader_config), weights.get("precision", 0.25)),
-            "recall": (RecallGrader(**grader_config), weights.get("recall", 0.25)),
-            "f1": (F1Grader(**grader_config), weights.get("f1", 0.2)),
+            "precision": (PrecisionGrader(**batch_grader_config), weights.get("precision", 0.25)),
+            "recall": (RecallGrader(**batch_grader_config), weights.get("recall", 0.25)),
+            "f1": (F1Grader(**batch_grader_config), weights.get("f1", 0.2)),
         }
 
         super().__init__(graders, name="ClassificationMetrics")
