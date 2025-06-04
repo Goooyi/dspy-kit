@@ -1,0 +1,338 @@
+# dspy-kit .gitignore
+
+# ================================
+# Python
+# ================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# ================================
+# Virtual Environments
+# ================================
+
+# uv virtual environments
+.venv/
+.venv
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Conda environments
+.conda/
+
+# ================================
+# Testing & Coverage
+# ================================
+
+# Pytest
+.pytest_cache/
+.cache/
+
+# Coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Test artifacts
+test-results/
+.test-data/
+
+# ================================
+# Development Tools
+# ================================
+
+# MyPy type checker
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff
+.ruff_cache/
+
+# Black
+.black/
+
+# Pre-commit
+.pre-commit-cache/
+
+# ================================
+# Documentation
+# ================================
+
+# MkDocs
+/site/
+docs/_build/
+docs/build/
+
+# Sphinx
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# ================================
+# IDEs & Editors
+# ================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ================================
+# Operating System
+# ================================
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ================================
+# Secrets & Configuration
+# ================================
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# API keys and secrets
+secrets.yaml
+secrets.json
+config/secrets/
+*.key
+*.pem
+
+# Configuration files with sensitive data
+config.ini
+config.yaml
+settings.yaml
+local_settings.py
+
+# ================================
+# Data & Models
+# ================================
+
+# Large model files
+*.bin
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+
+# Datasets
+data/
+datasets/
+*.csv
+*.tsv
+*.json
+*.jsonl
+!examples/**/*.json
+!examples/**/*.jsonl
+!tests/**/*.json
+
+# Evaluation results
+results/
+outputs/
+eval_results/
+benchmarks/
+
+# ================================
+# ML/AI Specific
+# ================================
+
+# MLflow artifacts (if used in examples)
+mlruns/
+mlartifacts/
+
+# Weights & Biases
+wandb/
+
+# TensorBoard logs
+logs/
+tensorboard/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Jupyter notebook outputs (optional - uncomment if you want to ignore)
+# *.ipynb
+
+# ================================
+# Build & Deployment
+# ================================
+
+# Docker
+.dockerignore
+Dockerfile.*
+docker-compose.override.yml
+
+# Kubernetes
+k8s/
+*.yaml
+!pyproject.toml
+!.pre-commit-config.yaml
+!examples/**/*.yaml
+
+# ================================
+# Temporary Files
+# ================================
+
+# General temp files
+*.tmp
+*.temp
+temp/
+tmp/
+.temp/
+
+# Log files
+*.log
+logs/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ================================
+# Project Specific
+# ================================
+
+# Example outputs (keep the scripts, ignore outputs)
+examples/**/output/
+examples/**/results/
+examples/**/*.log
+
+# Test data that shouldn't be committed
+tests/fixtures/large_data/
+tests/data/private/
+
+# Backup files
+*.bak
+*.backup
+
+# Local development files
+local/
+scratch/
+playground/
+
+# Performance profiling
+*.prof
+*.profile
+
+# ================================
+# Package Building
+# ================================
+
+# Hatch build system
+.hatch/
+
+# Build artifacts
+build/
+dist/
+
+# ================================
+# Node.js (for docs)
+# ================================
+
+# Node modules (if using for docs)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ================================
+# Archive files
+# ================================
+
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# But keep example archives if any
+!examples/**/*.zip
+!examples/**/*.tar.gz
