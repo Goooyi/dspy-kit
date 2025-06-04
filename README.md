@@ -57,8 +57,8 @@ qa_system = QASystem()
 
 # Individual graders
 accuracy_grader = ExactMatchGrader(
-    input_field="answer", 
-    reference_field="gold_answer"
+    pred="answer", 
+    ideal="gold_answer"
 )
 
 quality_grader = ScoreModelGrader(
@@ -233,8 +233,8 @@ Create reusable evaluation configurations:
 graders:
   accuracy:
     type: ExactMatchGrader
-    input_field: answer
-    reference_field: gold_answer
+    pred: answer
+    ideal: gold_answer
     
   quality:
     type: ScoreModelGrader

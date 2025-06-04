@@ -581,24 +581,12 @@ wheels = [
 ]
 
 [[package]]
-name = "dspy-ai"
-version = "2.6.25"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "dspy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bc/c1/edf340edf402d692657b2413e4d225926bdcf4a29a2edfea8977a0525224/dspy_ai-2.6.25.tar.gz", hash = "sha256:166ea503ea7d8df37b9b1afddfee9bd6f6546e4ae890b3b7849bc1c248a1a5b7", size = 1128, upload-time = "2025-06-02T21:02:45.276Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3e/ed/15065f09d76f96a3b4f43958cbffd20711c3938437e71ed413fed822d800/dspy_ai-2.6.25-py3-none-any.whl", hash = "sha256:d94bfdde7e0d53b5a6b213ae66d29ee2774a504bab001ad8bdbd47beceabf721", size = 1107, upload-time = "2025-06-02T21:02:43.958Z" },
-]
-
-[[package]]
 name = "dspy-kit"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
-    { name = "dspy-ai" },
+    { name = "dspy" },
     { name = "nltk" },
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
@@ -633,7 +621,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic", specifier = ">=0.20.0" },
-    { name = "dspy-ai", specifier = ">=2.6.23,<3.0.0" },
+    { name = "dspy", specifier = ">=2.6.23,<3.0.0" },
     { name = "mkdocs", marker = "extra == 'docs'", specifier = ">=1.5.0" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.0.0" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'", specifier = ">=0.20.0" },

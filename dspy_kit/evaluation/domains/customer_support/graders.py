@@ -2,14 +2,14 @@
 
 from typing import Any, Optional, Union
 
-from dspy_evals.core.base import CompositeGrader, ConfigurableGrader
-from dspy_evals.core.model_graders import (
+from dspy_kit.evaluation.graders.base import CompositeGrader, ConfigurableGrader
+from dspy_kit.evaluation.graders.model_graders import (
     BinaryClassificationGrader,
     LabelModelGrader,
     LikertScaleGrader,
     ScoreModelGrader,
 )
-from dspy_evals.core.string_graders import ExactMatchGrader
+from dspy_kit.evaluation.graders.string_graders import ExactMatchGrader
 
 
 class IntentAccuracyGrader(ConfigurableGrader):
@@ -19,8 +19,8 @@ class IntentAccuracyGrader(ConfigurableGrader):
     """
 
     DEFAULT_CONFIG = {
-        "intent_field": "predicted_intent",
-        "reference_intent_field": "true_intent",
+        "pred": "predicted_intent",
+        "ideal": "true_intent",
         "valid_intents": [
             "billing", "technical_support", "account_management",
             "product_inquiry", "complaint", "cancellation", "other"
@@ -31,22 +31,22 @@ class IntentAccuracyGrader(ConfigurableGrader):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        intent_field = getattr(self, 'intent_field', self.DEFAULT_CONFIG['intent_field'])
-        reference_intent_field = getattr(self, 'reference_intent_field', self.DEFAULT_CONFIG['reference_intent_field'])
+        pred_field = getattr(self, 'pred', self.DEFAULT_CONFIG['pred'])
+        ideal_field = getattr(self, 'ideal', self.DEFAULT_CONFIG['ideal'])
         case_sensitive = getattr(self, 'case_sensitive', self.DEFAULT_CONFIG['case_sensitive'])
 
         self.exact_match_grader = ExactMatchGrader(
-            input_field=intent_field,
-            reference_field=reference_intent_field,
+            pred=pred_field,
+            ideal=ideal_field,
             case_sensitive=case_sensitive
         )
 
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         # Extract predicted and true intents
-        intent_field = getattr(self, 'intent_field', self.DEFAULT_CONFIG['intent_field'])
-        reference_intent_field = getattr(self, 'reference_intent_field', self.DEFAULT_CONFIG['reference_intent_field'])
-        predicted_intent = self.extract_field(pred, intent_field)
-        true_intent = self.extract_field(example, reference_intent_field)
+        pred_field = getattr(self, 'pred', self.DEFAULT_CONFIG['pred'])
+        ideal_field = getattr(self, 'ideal', self.DEFAULT_CONFIG['ideal'])
+        predicted_intent = self.extract_field(pred, pred_field)
+        true_intent = self.extract_field(example, ideal_field)
 
         # Validate intents are in valid set
         strict_matching = getattr(self, 'strict_matching', self.DEFAULT_CONFIG['strict_matching'])

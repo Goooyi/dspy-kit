@@ -3,11 +3,12 @@
 import warnings
 from typing import Any, Optional, Union
 
-from .base import ConfigurableGrader, CompositeGrader
+from .base import CompositeGrader, ConfigurableGrader
 
 # Optional imports with fallbacks
 try:
     from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -27,14 +28,14 @@ class ClassificationGrader(ConfigurableGrader):
     """
 
     DEFAULT_CONFIG = {
-        "predicted_field": "predicted_label",
-        "true_field": "true_label",
+        "pred": "predicted_label",
+        "ideal": "true_label",
         "labels": None,  # List of all possible labels, auto-detected if None
         "average": "macro",  # "macro", "micro", "weighted", "binary", or None
         "zero_division": 0.0,  # Value to return when division by zero
         "pass_threshold": 0.7,
         "normalize_labels": True,
-        "case_sensitive": False
+        "case_sensitive": False,
     }
 
     def __init__(self, **kwargs):
@@ -43,15 +44,15 @@ class ClassificationGrader(ConfigurableGrader):
 
     def _extract_labels(self, example: Any, pred: Any) -> tuple[str, str]:
         """Extract predicted and true labels from example and prediction."""
-        predicted_field = getattr(self, 'predicted_field', self.DEFAULT_CONFIG['predicted_field'])
-        true_field = getattr(self, 'true_field', self.DEFAULT_CONFIG['true_field'])
+        pred_field = getattr(self, "pred", self.DEFAULT_CONFIG["pred"])
+        ideal_field = getattr(self, "ideal", self.DEFAULT_CONFIG["ideal"])
 
-        pred_label = self.extract_field(pred, predicted_field, "")
-        true_label = self.extract_field(example, true_field, "")
+        pred_label = self.extract_field(pred, pred_field, "")
+        true_label = self.extract_field(example, ideal_field, "")
 
         # Normalize labels if configured
-        normalize_labels = getattr(self, 'normalize_labels', self.DEFAULT_CONFIG['normalize_labels'])
-        case_sensitive = getattr(self, 'case_sensitive', self.DEFAULT_CONFIG['case_sensitive'])
+        normalize_labels = getattr(self, "normalize_labels", self.DEFAULT_CONFIG["normalize_labels"])
+        case_sensitive = getattr(self, "case_sensitive", self.DEFAULT_CONFIG["case_sensitive"])
 
         if normalize_labels:
             pred_label = pred_label.strip()
@@ -65,7 +66,7 @@ class ClassificationGrader(ConfigurableGrader):
 
     def _get_labels(self, true_labels: list[str], pred_labels: list[str]) -> list[str]:
         """Get the set of labels to use for calculation."""
-        configured_labels = getattr(self, 'labels', self.DEFAULT_CONFIG['labels'])
+        configured_labels = getattr(self, "labels", self.DEFAULT_CONFIG["labels"])
         if configured_labels:
             return configured_labels
 
@@ -73,7 +74,9 @@ class ClassificationGrader(ConfigurableGrader):
         all_labels = set(true_labels + pred_labels)
         return sorted(all_labels)
 
-    def _calculate_confusion_matrix_elements(self, true_labels: list[str], pred_labels: list[str], label: str) -> dict[str, int]:
+    def _calculate_confusion_matrix_elements(
+        self, true_labels: list[str], pred_labels: list[str], label: str
+    ) -> dict[str, int]:
         """Calculate TP, FP, FN, TN for a specific label."""
         tp = sum(1 for t, p in zip(true_labels, pred_labels) if t == label and p == label)
         fp = sum(1 for t, p in zip(true_labels, pred_labels) if t != label and p == label)
@@ -94,6 +97,13 @@ class PrecisionGrader(ClassificationGrader):
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         try:
             pred_label, true_label = self._extract_labels(example, pred)
+            # if pred_label != true_label and not pred_label.startswith('pred'):
+            # if pred_label != true_label and pred_label.startswith('pred'):
+            #     # print current class name
+            #     print("TMPTMPTMPTMPTMPTMPTMPTMPT")
+            #     print(f"pred: {pred_label}")
+            #     print(f"true: {true_label}")
+            #     print("FFFFFFFFFFFFFFFFFF")
 
             # For single example, calculate binary precision
             if pred_label == true_label:
@@ -104,7 +114,7 @@ class PrecisionGrader(ClassificationGrader):
             if trace is None:  # Evaluation mode
                 return precision
             else:  # Optimization mode
-                pass_threshold = getattr(self, 'pass_threshold', self.DEFAULT_CONFIG['pass_threshold'])
+                pass_threshold = getattr(self, "pass_threshold", self.DEFAULT_CONFIG["pass_threshold"])
                 return precision >= pass_threshold
 
         except Exception as e:
@@ -127,15 +137,12 @@ class PrecisionGrader(ClassificationGrader):
         """Calculate precision with averaging strategy."""
         if SKLEARN_AVAILABLE and precision_score is not None:
             try:
-                average = getattr(self, 'average', self.DEFAULT_CONFIG['average'])
-                zero_division = getattr(self, 'zero_division', self.DEFAULT_CONFIG['zero_division'])
+                average = getattr(self, "average", self.DEFAULT_CONFIG["average"])
+                zero_division = getattr(self, "zero_division", self.DEFAULT_CONFIG["zero_division"])
                 labels = self._get_labels(true_labels, pred_labels)
 
                 return precision_score(
-                    true_labels, pred_labels,
-                    labels=labels,
-                    average=average,
-                    zero_division=zero_division
+                    true_labels, pred_labels, labels=labels, average=average, zero_division=zero_division
                 )
             except Exception:
                 pass
@@ -146,18 +153,16 @@ class PrecisionGrader(ClassificationGrader):
     def _manual_precision(self, true_labels: list[str], pred_labels: list[str]) -> float:
         """Manual precision calculation."""
         labels = self._get_labels(true_labels, pred_labels)
-        average = getattr(self, 'average', self.DEFAULT_CONFIG['average'])
-        zero_division = getattr(self, 'zero_division', self.DEFAULT_CONFIG['zero_division'])
-        
+        average = getattr(self, "average", self.DEFAULT_CONFIG["average"])
+        zero_division = getattr(self, "zero_division", self.DEFAULT_CONFIG["zero_division"])
+
         if average == "micro":
             # Micro-average: calculate metrics globally
             total_tp = sum(
-                self._calculate_confusion_matrix_elements(true_labels, pred_labels, label)["tp"]
-                for label in labels
+                self._calculate_confusion_matrix_elements(true_labels, pred_labels, label)["tp"] for label in labels
             )
             total_fp = sum(
-                self._calculate_confusion_matrix_elements(true_labels, pred_labels, label)["fp"]
-                for label in labels
+                self._calculate_confusion_matrix_elements(true_labels, pred_labels, label)["fp"] for label in labels
             )
 
             if total_tp + total_fp == 0:
@@ -212,7 +217,7 @@ class RecallGrader(ClassificationGrader):
             if trace is None:  # Evaluation mode
                 return recall
             else:  # Optimization mode
-                pass_threshold = getattr(self, 'pass_threshold', self.DEFAULT_CONFIG['pass_threshold'])
+                pass_threshold = getattr(self, "pass_threshold", self.DEFAULT_CONFIG["pass_threshold"])
                 return recall >= pass_threshold
 
         except Exception as e:
@@ -235,15 +240,12 @@ class RecallGrader(ClassificationGrader):
         """Calculate recall with averaging strategy."""
         if SKLEARN_AVAILABLE and recall_score is not None:
             try:
-                average = getattr(self, 'average', self.DEFAULT_CONFIG['average'])
-                zero_division = getattr(self, 'zero_division', self.DEFAULT_CONFIG['zero_division'])
+                average = getattr(self, "average", self.DEFAULT_CONFIG["average"])
+                zero_division = getattr(self, "zero_division", self.DEFAULT_CONFIG["zero_division"])
                 labels = self._get_labels(true_labels, pred_labels)
 
                 return recall_score(
-                    true_labels, pred_labels,
-                    labels=labels,
-                    average=average,
-                    zero_division=zero_division
+                    true_labels, pred_labels, labels=labels, average=average, zero_division=zero_division
                 )
             except Exception:
                 pass
@@ -254,20 +256,18 @@ class RecallGrader(ClassificationGrader):
     def _manual_recall(self, true_labels: list[str], pred_labels: list[str]) -> float:
         """Manual recall calculation."""
         labels = self._get_labels(true_labels, pred_labels)
-        average = getattr(self, 'average', self.DEFAULT_CONFIG['average'])
-        zero_division = getattr(self, 'zero_division', self.DEFAULT_CONFIG['zero_division'])
-        
+        average = getattr(self, "average", self.DEFAULT_CONFIG["average"])
+        zero_division = getattr(self, "zero_division", self.DEFAULT_CONFIG["zero_division"])
+
         if average == "micro":
             # Micro-average: calculate metrics globally
             total_tp = sum(
-                self._calculate_confusion_matrix_elements(true_labels, pred_labels, label)["tp"]
-                for label in labels
+                self._calculate_confusion_matrix_elements(true_labels, pred_labels, label)["tp"] for label in labels
             )
             total_fn = sum(
-                self._calculate_confusion_matrix_elements(true_labels, pred_labels, label)["fn"]
-                for label in labels
+                self._calculate_confusion_matrix_elements(true_labels, pred_labels, label)["fn"] for label in labels
             )
-            
+
             if total_tp + total_fn == 0:
                 return zero_division
             return total_tp / (total_tp + total_fn)
@@ -320,7 +320,7 @@ class F1Grader(ClassificationGrader):
             if trace is None:  # Evaluation mode
                 return f1
             else:  # Optimization mode
-                pass_threshold = getattr(self, 'pass_threshold', self.DEFAULT_CONFIG['pass_threshold'])
+                pass_threshold = getattr(self, "pass_threshold", self.DEFAULT_CONFIG["pass_threshold"])
                 return f1 >= pass_threshold
 
         except Exception as e:
@@ -343,16 +343,11 @@ class F1Grader(ClassificationGrader):
         """Calculate F1 score with averaging strategy."""
         if SKLEARN_AVAILABLE and f1_score is not None:
             try:
-                average = getattr(self, 'average', self.DEFAULT_CONFIG['average'])
-                zero_division = getattr(self, 'zero_division', self.DEFAULT_CONFIG['zero_division'])
+                average = getattr(self, "average", self.DEFAULT_CONFIG["average"])
+                zero_division = getattr(self, "zero_division", self.DEFAULT_CONFIG["zero_division"])
                 labels = self._get_labels(true_labels, pred_labels)
 
-                return f1_score(
-                    true_labels, pred_labels,
-                    labels=labels,
-                    average=average,
-                    zero_division=zero_division
-                )
+                return f1_score(true_labels, pred_labels, labels=labels, average=average, zero_division=zero_division)
             except Exception:
                 pass
 
@@ -369,7 +364,7 @@ class F1Grader(ClassificationGrader):
         recall = recall_grader._calculate_recall(true_labels, pred_labels)
 
         # Calculate F1
-        zero_division = getattr(self, 'zero_division', self.DEFAULT_CONFIG['zero_division'])
+        zero_division = getattr(self, "zero_division", self.DEFAULT_CONFIG["zero_division"])
         if precision + recall == 0:
             return zero_division
 
@@ -387,14 +382,14 @@ class AccuracyGrader(ClassificationGrader):
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         try:
             pred_label, true_label = self._extract_labels(example, pred)
-            
+
             # For single example, accuracy is 1 if correct, 0 if incorrect
             accuracy = 1.0 if pred_label == true_label else 0.0
 
             if trace is None:  # Evaluation mode
                 return accuracy
             else:  # Optimization mode
-                pass_threshold = getattr(self, 'pass_threshold', self.DEFAULT_CONFIG['pass_threshold'])
+                pass_threshold = getattr(self, "pass_threshold", self.DEFAULT_CONFIG["pass_threshold"])
                 return accuracy >= pass_threshold
 
         except Exception as e:
@@ -436,20 +431,10 @@ class ClassificationMetricsGrader(CompositeGrader):
     Ideal for customer support intent classification and similar tasks.
     """
 
-    def __init__(
-        self,
-        weights: Optional[dict[str, float]] = None,
-        average: str = "macro",
-        **grader_kwargs
-    ):
+    def __init__(self, weights: Optional[dict[str, float]] = None, average: str = "macro", **grader_kwargs):
         # Default weights if not provided
         if weights is None:
-            weights = {
-                "accuracy": 0.3,
-                "precision": 0.25,
-                "recall": 0.25,
-                "f1": 0.2
-            }
+            weights = {"accuracy": 0.3, "precision": 0.25, "recall": 0.25, "f1": 0.2}
 
         # Create individual graders
         grader_config = {"average": average, **grader_kwargs}
@@ -457,7 +442,7 @@ class ClassificationMetricsGrader(CompositeGrader):
             "accuracy": (AccuracyGrader(**grader_config), weights.get("accuracy", 0.3)),
             "precision": (PrecisionGrader(**grader_config), weights.get("precision", 0.25)),
             "recall": (RecallGrader(**grader_config), weights.get("recall", 0.25)),
-            "f1": (F1Grader(**grader_config), weights.get("f1", 0.2))
+            "f1": (F1Grader(**grader_config), weights.get("f1", 0.2)),
         }
 
         super().__init__(graders, name="ClassificationMetrics")
@@ -474,61 +459,50 @@ class IntentClassificationGrader(ClassificationMetricsGrader):
         # Common customer support intents
         if intents is None:
             intents = [
-                "billing", "technical_support", "account_management",
-                "product_inquiry", "complaint", "cancellation",
-                "general_inquiry", "escalation"
+                "billing",
+                "technical_support",
+                "account_management",
+                "product_inquiry",
+                "complaint",
+                "cancellation",
+                "general_inquiry",
+                "escalation",
             ]
 
         # Configure for intent classification
         grader_config = {
             "labels": intents,
-            "predicted_field": "intent",
-            "true_field": "expected_intent",
+            "pred": "intent",
+            "ideal": "expected_intent",
             "average": "weighted",  # Weight by support since some intents are more common
             "normalize_labels": True,
             "case_sensitive": False,
-            **kwargs
+            **kwargs,
         }
 
         # Weight F1 and recall higher for intent classification
-        weights = {
-            "accuracy": 0.2,
-            "precision": 0.2,
-            "recall": 0.3,
-            "f1": 0.3
-        }
+        weights = {"accuracy": 0.2, "precision": 0.2, "recall": 0.3, "f1": 0.3}
 
         super().__init__(weights=weights, **grader_config)
 
 
 # Convenience functions for creating classification graders
 def create_intent_classifier_grader(
-    intents: Optional[list[str]] = None,
-    average: str = "weighted"
+    intents: Optional[list[str]] = None, average: str = "weighted"
 ) -> IntentClassificationGrader:
     """Create a grader optimized for intent classification."""
     return IntentClassificationGrader(intents=intents, average=average)
 
 
 def create_classification_grader(
-    labels: Optional[list[str]] = None,
-    average: str = "macro",
-    weights: Optional[dict[str, float]] = None
+    labels: Optional[list[str]] = None, average: str = "macro", weights: Optional[dict[str, float]] = None
 ) -> ClassificationMetricsGrader:
     """Create a general classification grader."""
-    return ClassificationMetricsGrader(
-        weights=weights,
-        average=average,
-        labels=labels
-    )
+    return ClassificationMetricsGrader(weights=weights, average=average, labels=labels)
 
 
 def create_binary_classification_grader(
-    positive_label: str = "positive",
-    negative_label: str = "negative"
+    positive_label: str = "positive", negative_label: str = "negative"
 ) -> ClassificationMetricsGrader:
     """Create a binary classification grader."""
-    return ClassificationMetricsGrader(
-        labels=[negative_label, positive_label],
-        average="binary"
-    )
+    return ClassificationMetricsGrader(labels=[negative_label, positive_label], average="binary")

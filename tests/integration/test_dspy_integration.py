@@ -112,7 +112,7 @@ class TestBasicDSPyIntegration:
     def test_string_grader_with_dspy_prediction(self):
         """Test string grader with actual DSPy prediction."""
         program = SimpleQAProgram()
-        grader = StringCheckGrader(operation="like", input_field="answer", reference_field="expected")
+        grader = StringCheckGrader(operation="like", pred="answer", ideal="expected")
         
         # Create test example
         example = dspy.Example(
@@ -130,7 +130,7 @@ class TestBasicDSPyIntegration:
     
     def test_dspy_metric_conversion(self):
         """Test converting grader to DSPy metric."""
-        grader = ExactMatchGrader(input_field="answer", reference_field="expected")
+        grader = ExactMatchGrader(pred="answer", ideal="expected")
         metric = grader.to_dspy_metric()
         
         # Test metric function signature
@@ -146,11 +146,11 @@ class TestBasicDSPyIntegration:
     
     def test_composite_grader_integration(self):
         """Test composite grader with DSPy workflow."""
-        accuracy_grader = ExactMatchGrader(input_field="answer", reference_field="expected")
+        accuracy_grader = ExactMatchGrader(pred="answer", ideal="expected")
         similarity_grader = TextSimilarityGrader(
             metric="fuzzy_match",
-            input_field="answer", 
-            reference_field="expected"
+            pred="answer", 
+            ideal="expected"
         )
         
         composite = CompositeGrader({

@@ -136,8 +136,8 @@ from dspy_kit import F1Grader, PrecisionGrader, RecallGrader
 
 # Precision for intent classification
 precision_grader = PrecisionGrader(
-    predicted_field="intent",
-    true_field="expected_intent",
+    pred="intent",
+    ideal="expected_intent",
     average="macro"
 )
 
@@ -154,20 +154,20 @@ If you have YAML configuration files:
 graders:
   accuracy:
     type: ExactMatchGrader
-    input_field: answer
-    reference_field: gold_answer
+    pred: answer
+    ideal: gold_answer
 
 # New - same format, but can now include classification graders
 graders:
   accuracy:
     type: ExactMatchGrader
-    input_field: answer
-    reference_field: gold_answer
+    pred: answer
+    ideal: gold_answer
     
   intent_f1:
     type: F1Grader
-    predicted_field: intent
-    true_field: expected_intent
+    pred: intent
+    ideal: expected_intent
     average: weighted
 ```
 
@@ -198,8 +198,8 @@ from dspy_kit import ExactMatchGrader, ScoreModelGrader, CompositeGrader
 
 # Everything works exactly the same!
 accuracy_grader = ExactMatchGrader(
-    input_field="answer",
-    reference_field="gold_answer"
+    pred="answer",
+    ideal="gold_answer"
 )
 
 quality_grader = ScoreModelGrader(

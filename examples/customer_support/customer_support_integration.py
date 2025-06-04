@@ -181,8 +181,8 @@ Score (1-5):""",
         
         # 6. Escalation Accuracy (if applicable)
         metrics['escalation_accuracy'] = ExactMatchGrader(
-            input_field='needs_escalation',
-            reference_field='should_escalate'
+            pred='needs_escalation',
+            ideal='should_escalate'
         )
         
         # 7. Edge Case Aware Wrapper

@@ -58,8 +58,8 @@ class StringCheckGrader(ConfigurableGrader):
 
     DEFAULT_CONFIG = {
         "operation": "eq",
-        "input_field": "output",
-        "reference_field": "answer",
+        "pred": "output",
+        "ideal": "answer",
         "case_sensitive": True,
         "normalize_whitespace": True,
         "strip_text": True
@@ -76,11 +76,11 @@ class StringCheckGrader(ConfigurableGrader):
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         try:
             # Extract strings to compare
-            input_field = getattr(self, 'input_field', self.DEFAULT_CONFIG['input_field'])
-            reference_field = getattr(self, 'reference_field', self.DEFAULT_CONFIG['reference_field'])
+            pred_field = getattr(self, 'pred', self.DEFAULT_CONFIG['pred'])
+            ideal_field = getattr(self, 'ideal', self.DEFAULT_CONFIG['ideal'])
 
-            input_text = self._extract_and_normalize(pred, input_field)
-            reference_text = self._extract_and_normalize(example, reference_field)
+            input_text = self._extract_and_normalize(pred, pred_field)
+            reference_text = self._extract_and_normalize(example, ideal_field)
 
             # Perform comparison based on operation
             result = self._compare_strings(input_text, reference_text)
@@ -152,8 +152,8 @@ class TextSimilarityGrader(ConfigurableGrader):
     DEFAULT_CONFIG = {
         "metric": "fuzzy_match",
         "threshold": 0.8,
-        "input_field": "output",
-        "reference_field": "answer",
+        "pred": "output",
+        "ideal": "answer",
         "normalize_text": True,
         "embedding_model": "all-MiniLM-L6-v2"
     }
@@ -171,11 +171,11 @@ class TextSimilarityGrader(ConfigurableGrader):
 
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         try:
-            input_field = getattr(self, 'input_field', self.DEFAULT_CONFIG['input_field'])
-            reference_field = getattr(self, 'reference_field', self.DEFAULT_CONFIG['reference_field'])
+            pred_field = getattr(self, 'pred', self.DEFAULT_CONFIG['pred'])
+            ideal_field = getattr(self, 'ideal', self.DEFAULT_CONFIG['ideal'])
 
-            input_text = self.extract_field(pred, input_field)
-            reference_text = self.extract_field(example, reference_field)
+            input_text = self.extract_field(pred, pred_field)
+            reference_text = self.extract_field(example, ideal_field)
 
             normalize_text = getattr(self, 'normalize_text', self.DEFAULT_CONFIG['normalize_text'])
             if normalize_text:
@@ -466,21 +466,21 @@ class MultiFieldGrader(ConfigurableGrader):
 
 
 # Convenience functions
-def create_exact_match(input_field: str = "output", reference_field: str = "answer") -> ExactMatchGrader:
+def create_exact_match(pred: str = "output", ideal: str = "answer") -> ExactMatchGrader:
     """Create an exact match grader."""
-    return ExactMatchGrader(input_field=input_field, reference_field=reference_field)
+    return ExactMatchGrader(pred=pred, ideal=ideal)
 
 
-def create_fuzzy_match(threshold: float = 0.8, input_field: str = "output", reference_field: str = "answer") -> TextSimilarityGrader:
+def create_fuzzy_match(threshold: float = 0.8, pred: str = "output", ideal: str = "answer") -> TextSimilarityGrader:
     """Create a fuzzy match grader."""
     return TextSimilarityGrader(
         metric="fuzzy_match",
         threshold=threshold,
-        input_field=input_field,
-        reference_field=reference_field
+        pred=pred,
+        ideal=ideal
     )
 
 
-def create_contains_check(input_field: str = "output", reference_field: str = "answer") -> ContainsGrader:
+def create_contains_check(pred: str = "output", ideal: str = "answer") -> ContainsGrader:
     """Create a contains check grader."""
-    return ContainsGrader(input_field=input_field, reference_field=reference_field)
+    return ContainsGrader(pred=pred, ideal=ideal)

@@ -86,8 +86,8 @@ class TestStringCheckGrader:
         """Test all string check operations."""
         grader = StringCheckGrader(
             operation=operation,
-            input_field="output",
-            reference_field="answer"
+            pred="output",
+            ideal="answer"
         )
         
         example = MockExample(answer=reference_val)
@@ -324,11 +324,11 @@ class TestMultiFieldGrader:
         field_graders = {
             "title": {
                 "type": "StringCheckGrader",
-                "params": {"operation": "eq", "input_field": "title", "reference_field": "expected_title"}
+                "params": {"operation": "eq", "pred": "title", "ideal": "expected_title"}
             },
             "content": {
                 "type": "TextSimilarityGrader", 
-                "params": {"metric": "fuzzy_match", "input_field": "content", "reference_field": "expected_content"}
+                "params": {"metric": "fuzzy_match", "pred": "content", "ideal": "expected_content"}
             }
         }
         
@@ -354,11 +354,11 @@ class TestMultiFieldGrader:
         field_graders = {
             "field1": {
                 "type": "StringCheckGrader",
-                "params": {"operation": "eq", "input_field": "field1", "reference_field": "ref1"}
+                "params": {"operation": "eq", "pred": "field1", "ideal": "ref1"}
             },
             "field2": {
                 "type": "StringCheckGrader",
-                "params": {"operation": "eq", "input_field": "field2", "reference_field": "ref2"}
+                "params": {"operation": "eq", "pred": "field2", "ideal": "ref2"}
             }
         }
         
@@ -383,7 +383,7 @@ class TestConvenienceFunctions:
     
     def test_create_exact_match(self):
         """Test create_exact_match function."""
-        grader = create_exact_match(input_field="answer", reference_field="gold")
+        grader = create_exact_match(pred="answer", ideal="gold")
         
         example = MockExample(gold="test")
         pred = MockPrediction(answer="test")
@@ -457,14 +457,14 @@ class TestConfiguration:
         """Test that graders properly inherit from ConfigurableGrader."""
         grader = StringCheckGrader(
             operation="eq",
-            input_field="custom_field",
-            reference_field="custom_ref"
+            pred="custom_field",
+            ideal="custom_ref"
         )
         
         # Check that configuration was applied
         assert getattr(grader, 'operation', None) == "eq"
-        assert getattr(grader, 'input_field', None) == "custom_field"
-        assert getattr(grader, 'reference_field', None) == "custom_ref"
+        assert getattr(grader, 'pred', None) == "custom_field"
+        assert getattr(grader, 'ideal', None) == "custom_ref"
     
     def test_default_config_override(self):
         """Test overriding default configuration."""

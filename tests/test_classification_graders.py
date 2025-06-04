@@ -184,8 +184,8 @@ class TestFieldExtraction:
         pred = dspy.Prediction(model_output="billing")
         
         grader = PrecisionGrader(
-            predicted_field="model_output",
-            true_field="ground_truth"
+            pred="model_output",
+            ideal="ground_truth"
         )
         
         score = grader(example, pred)
