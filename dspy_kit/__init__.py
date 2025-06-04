@@ -10,7 +10,7 @@ Built following OpenAI and Anthropic best practices for LLM evaluation and safet
 
 Features:
 - String-based graders (exact match, fuzzy matching, regex, etc.)
-- Model-based graders (LLM-as-a-judge with async support)  
+- Model-based graders (LLM-as-a-judge with async support)
 - Python code graders (custom evaluation logic)
 - Classification graders (precision, recall, F1, accuracy)
 - Domain-specific graders (customer support, QA, etc.)
@@ -26,27 +26,24 @@ __email__ = "gaaoyi@gmail.com"
 # Import all evaluation graders (main functionality)
 from .evaluation import *
 
-# Import utilities
-from .utils import *
-
 # Future modules available but not auto-imported to avoid warnings
 # Users can import them explicitly: from dspy_kit import synthetic, red_team
-
 # Main exports - re-export everything from evaluation module
 from .evaluation.graders import __all__ as _grader_exports
+
+# Import utilities
+from .utils import *
 
 __all__ = [
     # Re-export all graders and evaluation tools
     *_grader_exports,
-    
     # Utility functions
     "setup_logging",
-    "load_config", 
+    "load_config",
     "save_config",
     "extract_field",
     "normalize_text",
     "check_optional_dependency",
-    
     # Version and metadata
     "get_version",
     "get_info",
@@ -54,7 +51,7 @@ __all__ = [
 
 # Convenience aliases for common patterns (maintain backward compatibility)
 ExactMatch = ExactMatchGrader
-FuzzyMatch = FuzzyMatchGrader  
+FuzzyMatch = FuzzyMatchGrader
 Contains = ContainsGrader
 LLMJudge = ScoreModelGrader
 BinaryChoice = BinaryClassificationGrader
@@ -66,23 +63,25 @@ Accuracy = AccuracyGrader
 IntentClassifier = IntentClassificationGrader
 
 # Add aliases to exports
-__all__.extend([
-    "ExactMatch",
-    "FuzzyMatch", 
-    "Contains",
-    "LLMJudge",
-    "BinaryChoice",
-    "LikertScale",
-    "Precision",
-    "Recall", 
-    "F1Score",
-    "Accuracy",
-    "IntentClassifier",
-])
+__all__.extend(
+    [
+        "ExactMatch",
+        "FuzzyMatch",
+        "Contains",
+        "LLMJudge",
+        "BinaryChoice",
+        "LikertScale",
+        "Precision",
+        "Recall",
+        "F1Score",
+        "Accuracy",
+        "IntentClassifier",
+    ]
+)
 
 # Package metadata
 __description__ = "Comprehensive toolkit for DSPy programs: evaluation, synthetic data, and red teaming"
-__url__ = "https://github.com/Goooyi/dspy-kit" 
+__url__ = "https://github.com/Goooyi/dspy-kit"
 __license__ = "MIT"
 __keywords__ = ["dspy", "evaluation", "synthetic-data", "red-team", "llm", "metrics", "ai", "nlp"]
 
@@ -106,10 +105,10 @@ def get_info():
         "license": __license__,
         "modules": {
             "evaluation": "✅ Available - Comprehensive grader framework",
-            "synthetic": "🚧 Coming soon - Synthetic data generation", 
+            "synthetic": "🚧 Coming soon - Synthetic data generation",
             "red_team": "🚧 Coming soon - Red teaming and adversarial testing",
-            "utils": "✅ Available - Shared utilities"
-        }
+            "utils": "✅ Available - Shared utilities",
+        },
     }
 
 
@@ -118,6 +117,7 @@ def _print_welcome():
     """Print welcome message with key info."""
     try:
         import sys
+
         if hasattr(sys, "ps1"):  # Interactive mode
             print(f"🛠️  DSPy Kit v{__version__} - Comprehensive DSPy Toolkit")
             print("📖 Documentation: https://github.com/Goooyi/dspy-kit#readme")
