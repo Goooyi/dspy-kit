@@ -108,7 +108,7 @@ class PrecisionGrader(ClassificationGrader):
             if self._use_batch_mode:
                 self._accumulated_preds.append(pred_label)
                 self._accumulated_trues.append(true_label)
-                
+
                 # Calculate precision on accumulated data
                 precision = self._calculate_precision(self._accumulated_trues, self._accumulated_preds)
             else:
@@ -230,7 +230,7 @@ class RecallGrader(ClassificationGrader):
             if self._use_batch_mode:
                 self._accumulated_preds.append(pred_label)
                 self._accumulated_trues.append(true_label)
-                
+
                 # Calculate recall on accumulated data
                 recall = self._calculate_recall(self._accumulated_trues, self._accumulated_preds)
             else:
@@ -352,7 +352,7 @@ class F1Grader(ClassificationGrader):
             if self._use_batch_mode:
                 self._accumulated_preds.append(pred_label)
                 self._accumulated_trues.append(true_label)
-                
+
                 # Calculate F1 on accumulated data
                 f1 = self._calculate_f1(self._accumulated_trues, self._accumulated_preds)
             else:
