@@ -23,56 +23,163 @@ __version__ = "0.1.0"
 __author__ = "Goooyi"
 __email__ = "gaaoyi@gmail.com"
 
-# Import all evaluation graders (main functionality)
-from .evaluation import *
+# Explicit imports from evaluation module
+# Import domain-specific graders (only customer support is implemented)
+from .evaluation.domains.customer_support import (
+    CustomerSatisfactionGrader,
+    CustomerSupportCompositeGrader,
+    EscalationDetectionGrader,
+    IntentAccuracyGrader,
+    create_advanced_support_grader,
+    create_basic_support_grader,
+    create_intent_classifier_grader,
+)
+from .evaluation.graders import (
+    UTILITY_FUNCTIONS,
+    BaseDSPyGrader,
+    BaseGrader,
+    CompositeDSPyGrader,
+    CompositeGrader,
+    ConfigurableGrader,
+    ContainsGrader,
+    CustomMetricGrader,
+    DSPyContextUtilizationGrader,
+    DSPyFactualAccuracyGrader,
+    DSPyLikertScaleGrader,
+    DSPyRelevanceGrader,
+    DSPySafetyGrader,
+    DSPyToneEvaluationGrader,
+    EdgeCaseAwareGrader,
+    ExactMatchGrader,
+    FuzzyMatchGrader,
+    HelpfulnessGrader,
+    JSONValidationGrader,
+    ListComparisonGrader,
+    MultiFieldGrader,
+    NumericAccuracyGrader,
+    PythonGrader,
+    RegexGrader,
+    RegexMatchGrader,
+    SemanticSimilarityGrader,
+    SQLExecutionGrader,
+    StartsWithGrader,
+    StringCheckGrader,
+    TextSimilarityGrader,
+    create_advanced_customer_support_grader,
+    create_comprehensive_qa_grader,
+    create_contains_check,
+    create_dspy_customer_support_grader,
+    create_dspy_qa_grader,
+    create_exact_match,
+    create_fuzzy_match,
+    create_lambda_grader,
+    create_python_grader_from_file,
+    dspy_metric,
+)
 
-# Future modules available but not auto-imported to avoid warnings
-# Users can import them explicitly: from dspy_kit import synthetic, red_team
-# Main exports - re-export everything from evaluation module
-from .evaluation.graders import __all__ as _grader_exports
-
-# Import utilities
-from .utils import *
-
-__all__ = [
-    # Re-export all graders and evaluation tools
-    *_grader_exports,
-    # Utility functions
-    "setup_logging",
-    "load_config",
-    "save_config",
-    "extract_field",
-    "normalize_text",
-    "check_optional_dependency",
-    # Version and metadata
-    "get_version",
-    "get_info",
-]
+# Explicit imports from utils module
+from .utils import (
+    ConfigurationError,
+    DependencyError,
+    DSPyKitError,
+    ValidationError,
+    batch_items,
+    check_optional_dependency,
+    ensure_list,
+    extract_field,
+    get_env_var,
+    load_config,
+    normalize_text,
+    safe_divide,
+    save_config,
+    setup_logging,
+    validate_field,
+)
 
 # Convenience aliases for common patterns (maintain backward compatibility)
 ExactMatch = ExactMatchGrader
 FuzzyMatch = FuzzyMatchGrader
 Contains = ContainsGrader
 
-# Legacy aliases removed - use DSPy versions instead:
-# LLMJudge = ScoreModelGrader  # Use DSPyFactualAccuracyGrader, etc.
-# BinaryChoice = BinaryClassificationGrader  # Use DSPySafetyGrader, etc.
-# LikertScale = LikertScaleGrader  # Use DSPyLikertScaleGrader
-
-# Add aliases to exports
-__all__.extend(
-    [
-        "ExactMatch",
-        "FuzzyMatch",
-        "Contains",
-        # Legacy aliases removed - use DSPy grader versions
-        "Precision",
-        "Recall",
-        "F1Score",
-        "Accuracy",
-        "IntentClassifier",
-    ]
-)
+# Define explicit __all__ list
+__all__ = [
+    # Base classes
+    "BaseGrader",
+    "CompositeGrader",
+    "ConfigurableGrader",
+    "EdgeCaseAwareGrader",
+    "dspy_metric",
+    # String graders
+    "ContainsGrader",
+    "ExactMatchGrader",
+    "MultiFieldGrader",
+    "RegexGrader",
+    "StartsWithGrader",
+    "StringCheckGrader",
+    "TextSimilarityGrader",
+    "create_contains_check",
+    "create_exact_match",
+    "create_fuzzy_match",
+    # DSPy-optimizable graders
+    "BaseDSPyGrader",
+    "CompositeDSPyGrader",
+    "DSPyContextUtilizationGrader",
+    "DSPyFactualAccuracyGrader",
+    "DSPyLikertScaleGrader",
+    "DSPyRelevanceGrader",
+    "DSPySafetyGrader",
+    "DSPyToneEvaluationGrader",
+    "HelpfulnessGrader",
+    "SemanticSimilarityGrader",
+    "create_advanced_customer_support_grader",
+    "create_comprehensive_qa_grader",
+    "create_dspy_customer_support_grader",
+    "create_dspy_qa_grader",
+    # Python graders
+    "CustomMetricGrader",
+    "FuzzyMatchGrader",
+    "JSONValidationGrader",
+    "ListComparisonGrader",
+    "NumericAccuracyGrader",
+    "PythonGrader",
+    "RegexMatchGrader",
+    "SQLExecutionGrader",
+    "UTILITY_FUNCTIONS",
+    "create_lambda_grader",
+    "create_python_grader_from_file",
+    # Domain-specific graders (customer support)
+    "CustomerSatisfactionGrader",
+    "CustomerSupportCompositeGrader",
+    "EscalationDetectionGrader",
+    "IntentAccuracyGrader",
+    "create_advanced_support_grader",
+    "create_basic_support_grader",
+    "create_intent_classifier_grader",
+    # Utility functions
+    "batch_items",
+    "check_optional_dependency",
+    "ensure_list",
+    "extract_field",
+    "get_env_var",
+    "load_config",
+    "normalize_text",
+    "safe_divide",
+    "save_config",
+    "setup_logging",
+    "validate_field",
+    # Exceptions
+    "ConfigurationError",
+    "DSPyKitError",
+    "DependencyError",
+    "ValidationError",
+    # Convenience aliases
+    "Contains",
+    "ExactMatch",
+    "FuzzyMatch",
+    # Version and metadata
+    "get_info",
+    "get_version",
+]
 
 # Package metadata
 __description__ = "Comprehensive toolkit for DSPy programs: evaluation, synthetic data, and red teaming"
@@ -116,8 +223,8 @@ def _print_welcome():
         if hasattr(sys, "ps1"):  # Interactive mode
             print(f"🛠️  DSPy Kit v{__version__} - Comprehensive DSPy Toolkit")
             print("📖 Documentation: https://github.com/Goooyi/dspy-kit#readme")
-            print("🎯 Evaluation: Try `create_exact_match()` or `ScoreModelGrader()`")
-            print("📊 Classification: Try `F1Grader()` or `create_intent_classifier_grader()`")
+            print("🎯 Evaluation: Try `create_exact_match()` or `SemanticSimilarityGrader()`")
+            print("📊 Classification: Try `FuzzyMatchGrader()` or `create_dspy_customer_support_grader()`")
             print("🔮 Synthetic data & red teaming: Coming soon!")
     except Exception:
         pass  # Silently fail if there are any issues

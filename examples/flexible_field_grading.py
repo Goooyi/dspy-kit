@@ -100,7 +100,7 @@ def example_2_dspy_program_integration():
 
     print("Grader configured for custom field names:")
     print(f"- Answer field: {grader.graders['accuracy'][0].pred_field}")
-    print(f"- Question field: {grader.graders['relevance'][0].query_field}")
+    print(f"- Question field: {grader.graders['relevance'][0].query_field}")  # type: ignore
     print(f"- Expected field: {grader.graders['accuracy'][0].ideal_field}")
 
 

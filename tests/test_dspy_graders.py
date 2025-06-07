@@ -267,7 +267,8 @@ class TestCompositeDSPyGrader:
 
         graders = {"accuracy": (mock_grader1, 0.6), "relevance": (mock_grader2, 0.4)}
 
-        composite = CompositeDSPyGrader(graders)
+        # Type: ignore the mock objects for testing purposes
+        composite = CompositeDSPyGrader(graders)  # type: ignore
         assert composite.graders == graders
         assert isinstance(composite, dspy.Module)
 
@@ -283,7 +284,7 @@ class TestCompositeDSPyGrader:
         }
 
         with pytest.raises(ValueError, match="Weights must sum to 1.0"):
-            CompositeDSPyGrader(invalid_graders)
+            CompositeDSPyGrader(invalid_graders)  # type: ignore
 
     def test_composite_scoring(self):
         """Test composite scoring calculation."""
@@ -294,7 +295,7 @@ class TestCompositeDSPyGrader:
 
         graders = {"accuracy": (mock_grader1, 0.7), "relevance": (mock_grader2, 0.3)}
 
-        composite = CompositeDSPyGrader(graders)
+        composite = CompositeDSPyGrader(graders)  # type: ignore
 
         example = {"test": "data"}
         pred = {"test": "prediction"}
@@ -337,7 +338,8 @@ class TestConvenienceFunctions:
         # Check field configuration
         helpfulness_grader = grader.graders["helpfulness"][0]
         assert helpfulness_grader.pred_field == "agent_response"
-        assert helpfulness_grader.query_field == "customer_query"
+        # HelpfulnessGrader has query_field as it's initialized with that parameter
+        assert getattr(helpfulness_grader, 'query_field', None) == "customer_query"
 
 
 class TestIntegrationWithDSPy:

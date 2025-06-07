@@ -148,7 +148,7 @@ class CustomerSatisfactionGrader(BaseDSPyGrader):
                     score = score / 5.0 if score <= 5.0 else 1.0
                 return max(0.0, min(1.0, score))
             return 0.0
-        except:
+        except: # noqa "No rating given"
             return 0.0
 
 

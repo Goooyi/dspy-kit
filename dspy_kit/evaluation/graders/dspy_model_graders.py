@@ -100,7 +100,7 @@ class SemanticSimilarityGrader(BaseDSPyGrader):
 
     def __init__(self, pred_field: str = "output", ideal_field: str = "expected", threshold: float = 0.8, **kwargs):
         super().__init__(pred_field, ideal_field, threshold, **kwargs)
-        self.similarity_evaluator = dspy.ChainOfThought("predicted_text, reference_text -> similarity_score")
+        self.similarity_evaluator = dspy.ChainOfThought("predicted_text, reference_text -> similarity_score")  # type: ignore
 
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         try:
@@ -133,7 +133,7 @@ class SemanticSimilarityGrader(BaseDSPyGrader):
                     score = score / 100.0 if score <= 100.0 else 1.0
                 return max(0.0, min(1.0, score))
             return 0.0
-        except:
+        except: # noqa "No rating given"
             return 0.0
 
 
@@ -185,7 +185,7 @@ class FactualAccuracyGrader(BaseDSPyGrader):
                 score = float(numbers[0])
                 return max(0.0, min(1.0, score))
             return 0.0
-        except:
+        except: # noqa "No rating given"
             return 0.0
 
 
@@ -238,7 +238,7 @@ class RelevanceGrader(BaseDSPyGrader):
                 score = float(numbers[0])
                 return max(0.0, min(1.0, score))
             return 0.0
-        except:
+        except: # noqa "No rating given"
             return 0.0
 
 
@@ -291,7 +291,7 @@ class HelpfulnessGrader(BaseDSPyGrader):
                 score = float(numbers[0])
                 return max(0.0, min(1.0, score))
             return 0.0
-        except:
+        except: # noqa "No rating given"
             return 0.0
 
 
@@ -391,7 +391,7 @@ class ToneEvaluationGrader(BaseDSPyGrader):
                     score = score / 5.0 if score <= 5.0 else 1.0
                 return max(0.0, min(1.0, score))
             return 0.0
-        except:
+        except: # noqa "No rating given"
             return 0.0
 
 
@@ -457,7 +457,7 @@ class ContextUtilizationGrader(BaseDSPyGrader):
                     score = score / 5.0 if score <= 5.0 else 1.0
                 return max(0.0, min(1.0, score))
             return 0.0
-        except:
+        except: # noqa "No rating given"
             return 0.0
 
 
@@ -521,7 +521,7 @@ class LikertScaleGrader(BaseDSPyGrader):
                 score = int(numbers[0])
                 return max(1, min(5, score))  # Clamp to 1-5 range
             return 1
-        except:
+        except: # noqa "No rating given"
             return 1
 
 
@@ -670,7 +670,7 @@ def example_usage():
     Example of how to use these optimizable graders.
     """
     # Set up DSPy
-    lm = dspy.OpenAI(model="gpt-4o-mini")
+    lm = dspy.OpenAI(model="gpt-4o-mini")  # type: ignore
     dspy.configure(lm=lm)
 
     # Create your program
