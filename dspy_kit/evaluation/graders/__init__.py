@@ -9,20 +9,25 @@ from .base import (
     dspy_metric,
 )
 
-# Model-based graders (LLM-as-a-judge)
-from .model_graders import (
-    ModelGrader,
-    BinaryClassificationGrader,
-    ContextUtilizationGrader,
-    FactualAccuracyGrader,
-    LabelModelGrader,
-    LikertScaleGrader,
-    RelevanceGrader,
-    SafetyGrader,
-    ScoreModelGrader,
-    ToneEvaluationGrader,
-    create_customer_support_grader,
-    create_qa_grader,
+# Legacy model-based graders (deprecated - use DSPy-optimizable versions instead)
+# from .model_graders import (...)  # Removed - migrated to dspy_model_graders
+
+# DSPy-optimizable graders with flexible field extraction
+from .dspy_model_graders import (
+    BaseDSPyGrader,
+    SemanticSimilarityGrader,
+    FactualAccuracyGrader as DSPyFactualAccuracyGrader,
+    RelevanceGrader as DSPyRelevanceGrader,
+    HelpfulnessGrader,
+    SafetyGrader as DSPySafetyGrader,
+    ToneEvaluationGrader as DSPyToneEvaluationGrader,
+    ContextUtilizationGrader as DSPyContextUtilizationGrader,
+    LikertScaleGrader as DSPyLikertScaleGrader,
+    CompositeDSPyGrader,
+    create_qa_grader as create_dspy_qa_grader,
+    create_customer_support_grader as create_dspy_customer_support_grader,
+    create_advanced_customer_support_grader,
+    create_comprehensive_qa_grader,
 )
 
 # Python code graders
@@ -72,19 +77,23 @@ __all__ = [
     "create_exact_match",
     "create_fuzzy_match",
     "create_contains_check",
-    # Model graders
-    "ModelGrader",
-    "ScoreModelGrader",
-    "LabelModelGrader",
-    "LikertScaleGrader",
-    "BinaryClassificationGrader",
-    "FactualAccuracyGrader",
-    "ToneEvaluationGrader",
-    "ContextUtilizationGrader",
-    "SafetyGrader",
-    "RelevanceGrader",
-    "create_customer_support_grader",
-    "create_qa_grader",
+    # Legacy model graders (deprecated - use DSPy versions)
+    # Use DSPyFactualAccuracyGrader, DSPyRelevanceGrader, etc. instead
+    # DSPy-optimizable graders
+    "BaseDSPyGrader",
+    "SemanticSimilarityGrader",
+    "DSPyFactualAccuracyGrader",
+    "DSPyRelevanceGrader",
+    "HelpfulnessGrader",
+    "DSPySafetyGrader",
+    "DSPyToneEvaluationGrader",
+    "DSPyContextUtilizationGrader",
+    "DSPyLikertScaleGrader",
+    "CompositeDSPyGrader",
+    "create_dspy_qa_grader",
+    "create_dspy_customer_support_grader",
+    "create_advanced_customer_support_grader",
+    "create_comprehensive_qa_grader",
     # Python graders
     "PythonGrader",
     "FuzzyMatchGrader",
@@ -103,5 +112,18 @@ __all__ = [
 ExactMatch = ExactMatchGrader
 FuzzyMatch = FuzzyMatchGrader
 Contains = ContainsGrader
-LLMJudge = ScoreModelGrader
-BinaryChoice = BinaryClassificationGrader
+
+# Legacy aliases (deprecated - use DSPy versions)
+# LLMJudge = ScoreModelGrader  # Use DSPy graders instead
+# BinaryChoice = BinaryClassificationGrader  # Use DSPy graders instead
+
+# Recommended aliases for new DSPy-optimizable graders
+FlexibleSemanticSimilarity = SemanticSimilarityGrader
+FlexibleFactualAccuracy = DSPyFactualAccuracyGrader
+FlexibleRelevance = DSPyRelevanceGrader
+FlexibleHelpfulness = HelpfulnessGrader
+FlexibleSafety = DSPySafetyGrader
+FlexibleTone = DSPyToneEvaluationGrader
+FlexibleContextUtilization = DSPyContextUtilizationGrader
+FlexibleLikertScale = DSPyLikertScaleGrader
+FlexibleComposite = CompositeDSPyGrader

@@ -1,13 +1,13 @@
 """Customer support domain-specific evaluation graders."""
 
 # Import commonly used core graders for convenience
-from dspy_kit.evaluation.graders.model_graders import (
-    ContextUtilizationGrader,
-    FactualAccuracyGrader,
-    RelevanceGrader,
-    SafetyGrader,
-    ToneEvaluationGrader,
-    create_customer_support_grader,
+from dspy_kit.evaluation.graders.dspy_model_graders import (
+    ContextUtilizationGrader as DSPyContextUtilizationGrader,
+    FactualAccuracyGrader as DSPyFactualAccuracyGrader,
+    RelevanceGrader as DSPyRelevanceGrader,
+    SafetyGrader as DSPySafetyGrader,
+    ToneEvaluationGrader as DSPyToneEvaluationGrader,
+    create_customer_support_grader as create_dspy_customer_support_grader,
 )
 from dspy_kit.evaluation.graders.string_graders import (
     ExactMatchGrader,

@@ -3,388 +3,206 @@
 from typing import Any, Optional, Union
 
 from dspy_kit.evaluation.graders.base import CompositeGrader, ConfigurableGrader
-from dspy_kit.evaluation.graders.model_graders import (
-    BinaryClassificationGrader,
-    FactualAccuracyGrader,
-    LabelModelGrader,
-    LikertScaleGrader,
-    ScoreModelGrader,
+from dspy_kit.evaluation.graders.dspy_model_graders import (
+    FactualAccuracyGrader as DSPyFactualAccuracyGrader,
+    LikertScaleGrader as DSPyLikertScaleGrader,
+    SafetyGrader as DSPySafetyGrader,
+    ToneEvaluationGrader as DSPyToneEvaluationGrader,
+    HelpfulnessGrader as DSPyHelpfulnessGrader,
+    BaseDSPyGrader,
 )
+import dspy
 from dspy_kit.evaluation.graders.string_graders import ExactMatchGrader
 
 
 class IntentAccuracyGrader(ConfigurableGrader):
     """
-    Evaluates intent classification accuracy for customer support routing.
-    Critical for multi-agent customer support systems.
+    Evaluates intent classification accuracy for customer support.
+    
+    Checks if the AI correctly identified the customer's intent
+    (billing, technical, cancellation, etc.)
     """
 
     DEFAULT_CONFIG = {
+        "valid_intents": ["billing", "technical", "account", "cancellation", "general"],
         "pred": "predicted_intent",
-        "ideal": "true_intent",
-        "valid_intents": [
-            "billing",
-            "technical_support",
-            "account_management",
-            "product_inquiry",
-            "complaint",
-            "cancellation",
-            "other",
-        ],
-        "strict_matching": True,
-        "case_sensitive": False,
+        "ideal": "actual_intent",
     }
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        pred_field = getattr(self, "pred", self.DEFAULT_CONFIG["pred"])
-        ideal_field = getattr(self, "ideal", self.DEFAULT_CONFIG["ideal"])
-        case_sensitive = getattr(self, "case_sensitive", self.DEFAULT_CONFIG["case_sensitive"])
-
-        self.exact_match_grader = ExactMatchGrader(pred=pred_field, ideal=ideal_field, case_sensitive=case_sensitive)
+        self.exact_match_grader = ExactMatchGrader()
 
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
-        # Extract predicted and true intents
-        pred_field = getattr(self, "pred", self.DEFAULT_CONFIG["pred"])
-        ideal_field = getattr(self, "ideal", self.DEFAULT_CONFIG["ideal"])
-        predicted_intent = self.extract_field(pred, pred_field)
-        true_intent = self.extract_field(example, ideal_field)
+        try:
+            predicted_intent = self.extract_field(pred, getattr(self, "pred", "predicted_intent"))
+            actual_intent = self.extract_field(example, getattr(self, "ideal", "actual_intent"))
 
-        # Validate intents are in valid set
-        strict_matching = getattr(self, "strict_matching", self.DEFAULT_CONFIG["strict_matching"])
-        valid_intents = getattr(self, "valid_intents", self.DEFAULT_CONFIG["valid_intents"])
-        if strict_matching:
-            if predicted_intent not in valid_intents:
-                return 0.0 if trace is None else False
-            if true_intent not in valid_intents:
+            # Normalize intents to lowercase
+            predicted_intent = predicted_intent.lower().strip()
+            actual_intent = actual_intent.lower().strip()
+
+            # Check if predicted intent is valid
+            valid_intents = getattr(self, "valid_intents", self.DEFAULT_CONFIG["valid_intents"])
+            if predicted_intent not in [intent.lower() for intent in valid_intents]:
                 return 0.0 if trace is None else False
 
-        # Use exact match grader
-        return self.exact_match_grader(example, pred, trace)
+            # Use exact match grader
+            return self.exact_match_grader(example, pred, trace)
+
+        except Exception as e:
+            print(f"IntentAccuracyGrader error: {e}")
+            return 0.0 if trace is None else False
 
 
-class EscalationDetectionGrader(BinaryClassificationGrader):
+class EscalationDetectionGrader(BaseDSPyGrader):
     """
     Detects when a customer query requires human escalation.
     """
 
-    DEFAULT_CONFIG = {
-        **BinaryClassificationGrader.DEFAULT_CONFIG,
-        "question": "Should this customer query be escalated to a human agent?",
-        "prompt_template": """Determine if this customer query requires human escalation.
+    class EscalationSignature(dspy.Signature):
+        """
+        Determine if a customer query requires human escalation.
+        Consider frustration level, complexity, and resolution attempts.
+        """
+        
+        customer_query: str = dspy.InputField()
+        ai_response: str = dspy.InputField()
+        escalation_needed: str = dspy.OutputField(
+            desc="'yes' if escalation needed, 'no' if AI can handle"
+        )
+        reasoning: str = dspy.OutputField(desc="Brief explanation of decision")
 
-Escalate if:
-- Customer is extremely frustrated or angry
-- Complex technical issue beyond AI capabilities
-- Legal or compliance concerns
-- Account security issues
-- Multiple failed resolution attempts
+    def __init__(self, pred_field: str = "output", query_field: str = "question", **kwargs):
+        super().__init__(pred_field, query_field, 0.5, **kwargs)
+        self.query_field = query_field
+        self.escalation_evaluator = dspy.ChainOfThought(self.EscalationSignature)
 
-Customer Query: {{item.question}}
-AI Response: {{sample.output_text}}
-Customer History: {{item.interaction_history}}
+    def __call__(self, example, pred, trace=None):
+        try:
+            ai_response = self.extract_field(pred, self.pred_field)
+            customer_query = self.extract_field(example, self.query_field)
+            
+            result = self.escalation_evaluator(
+                customer_query=customer_query,
+                ai_response=ai_response
+            )
+            
+            needs_escalation = "yes" in result.escalation_needed.lower()
+            score = 1.0 if needs_escalation else 0.0
+            
+            return score if trace is None else needs_escalation
+        except Exception as e:
+            print(f"EscalationDetectionGrader error: {e}")
+            return 0.0 if trace is None else False
 
-Should this be escalated to a human? (yes/no):""",
-        "labels": ["yes", "no"],
-        "passing_labels": ["yes"],
-    }
 
-
-class CustomerSatisfactionGrader(ScoreModelGrader):
+class CustomerSatisfactionGrader(BaseDSPyGrader):
     """
     Predicts customer satisfaction based on the interaction.
     """
 
-    DEFAULT_CONFIG = {
-        **ScoreModelGrader.DEFAULT_CONFIG,
-        "range": [1, 5],
-        "pass_threshold": 4.0,
-        "prompt_template": """Rate the likely customer satisfaction with this support interaction (1-5):
+    class SatisfactionSignature(dspy.Signature):
+        """
+        Predict customer satisfaction based on the support interaction.
+        Consider resolution quality, response time, and tone.
+        """
+        
+        customer_query: str = dspy.InputField()
+        agent_response: str = dspy.InputField()
+        satisfaction_score: float = dspy.OutputField(
+            desc="Satisfaction score from 0.0 to 1.0, where 1.0 is very satisfied"
+        )
+        analysis: str = dspy.OutputField(desc="Analysis of satisfaction factors")
 
-1 = Very Dissatisfied (angry, unresolved, poor experience)
-2 = Dissatisfied (frustrated, partially resolved)
-3 = Neutral (basic resolution, no strong feelings)
-4 = Satisfied (good resolution, positive experience)
-5 = Very Satisfied (excellent service, exceeded expectations)
+    def __init__(self, pred_field: str = "output", query_field: str = "question", **kwargs):
+        super().__init__(pred_field, query_field, 0.7, **kwargs)
+        self.query_field = query_field
+        self.satisfaction_evaluator = dspy.ChainOfThought(self.SatisfactionSignature)
 
-Customer Query: {{item.question}}
-Support Response: {{sample.output_text}}
-Resolution Status: {{item.resolution_status}}
-
-Predicted satisfaction score (1-5):""",
-        "system_prompt": "You are a customer experience expert predicting satisfaction scores.",
-    }
-
-
-class EmpathyEvaluationGrader(LikertScaleGrader):
-    """
-    Evaluates the empathy and emotional intelligence in customer support responses.
-    """
-
-    DEFAULT_CONFIG = {
-        **LikertScaleGrader.DEFAULT_CONFIG,
-        "range": [1, 5],
-        "pass_threshold": 3.0,
-        "criteria": "Empathy, emotional understanding, and human connection",
-        "prompt_template": """Rate the empathy shown in this customer support response (1-5):
-
-1 = No empathy, robotic, dismissive of customer feelings
-2 = Low empathy, acknowledges issue but lacks emotional connection
-3 = Moderate empathy, shows understanding but somewhat generic
-4 = Good empathy, demonstrates care and understanding
-5 = Excellent empathy, deeply understanding and emotionally supportive
-
-Customer Query: {{item.question}}
-Customer Sentiment: {{item.customer_sentiment}}
-Support Response: {{sample.output_text}}
-
-Empathy rating (1-5):""",
-        "system_prompt": "You are an emotional intelligence expert evaluating empathy in customer service.",
-    }
-
-
-class ProblemResolutionGrader(ScoreModelGrader):
-    """
-    Evaluates how well the response addresses and resolves the customer's problem.
-    """
-
-    DEFAULT_CONFIG = {
-        **ScoreModelGrader.DEFAULT_CONFIG,
-        "range": [1, 5],
-        "pass_threshold": 4.0,
-        "prompt_template": """Rate how well this response resolves the customer's problem (1-5):
-
-1 = Doesn't address the problem at all
-2 = Partially addresses but doesn't provide solution
-3 = Addresses the problem with basic solution
-4 = Good resolution with clear next steps
-5 = Excellent resolution, comprehensive and actionable
-
-Customer Problem: {{item.question}}
-Problem Category: {{item.problem_category}}
-Support Response: {{sample.output_text}}
-Available Solutions: {{item.available_solutions}}
-
-Resolution quality (1-5):""",
-        "system_prompt": "You are a customer support quality expert evaluating problem resolution.",
-    }
-
-
-class FirstContactResolutionGrader(BinaryClassificationGrader):
-    """
-    Evaluates if the issue can be resolved in the first contact.
-    """
-
-    DEFAULT_CONFIG = {
-        **BinaryClassificationGrader.DEFAULT_CONFIG,
-        "question": "Can this customer issue be resolved in the first contact?",
-        "prompt_template": """Determine if this customer issue can be fully resolved in the first contact.
-
-Consider:
-- Complexity of the issue
-- Information provided by customer
-- Available solutions and tools
-- Need for additional verification or escalation
-
-Customer Issue: {{item.question}}
-Support Response: {{sample.output_text}}
-Customer Account Status: {{item.account_status}}
-
-Can be resolved in first contact? (yes/no):""",
-        "labels": ["yes", "no"],
-        "passing_labels": ["yes"],
-    }
-
-
-class ComplianceGrader(BinaryClassificationGrader):
-    """
-    Checks if the response complies with company policies and regulations.
-    """
-
-    DEFAULT_CONFIG = {
-        **BinaryClassificationGrader.DEFAULT_CONFIG,
-        "question": "Does this response comply with company policies?",
-        "prompt_template": """Check if this support response complies with policies:
-
-Policy Areas to Check:
-- Privacy and data protection
-- Terms of service adherence
-- Refund and cancellation policies
-- Regulatory compliance
-- Appropriate language and tone
-
-Customer Query: {{item.question}}
-Support Response: {{sample.output_text}}
-Company Policies: {{item.company_policies}}
-
-Is compliant? (yes/no):""",
-        "labels": ["yes", "no"],
-        "passing_labels": ["yes"],
-    }
-
-
-class ResponseCompletenessGrader(ScoreModelGrader):
-    """
-    Evaluates if the response completely addresses all aspects of the customer query.
-    """
-
-    DEFAULT_CONFIG = {
-        **ScoreModelGrader.DEFAULT_CONFIG,
-        "range": [1, 5],
-        "pass_threshold": 4.0,
-        "prompt_template": """Rate how completely this response addresses the customer query (1-5):
-
-1 = Addresses none of the questions/concerns
-2 = Addresses some but misses major points
-3 = Addresses most points but lacks some details
-4 = Addresses all main points with good detail
-5 = Comprehensive response covering everything thoroughly
-
-Customer Query: {{item.question}}
-Key Points to Address: {{item.key_points}}
-Support Response: {{sample.output_text}}
-
-Completeness score (1-5):""",
-        "system_prompt": "You are a quality assurance expert evaluating response completeness.",
-    }
-
-
-class UrgencyAssessmentGrader(LabelModelGrader):
-    """
-    Assesses the urgency level of customer issues for proper prioritization.
-    """
-
-    DEFAULT_CONFIG = {
-        **LabelModelGrader.DEFAULT_CONFIG,
-        "labels": ["low", "medium", "high", "critical"],
-        "passing_labels": ["high", "critical"],
-        "prompt_template": """Classify the urgency level of this customer issue:
-
-- Critical: Service down, security breach, data loss
-- High: Major functionality broken, billing errors, angry customer
-- Medium: Minor bugs, feature requests, general questions
-- Low: Information requests, minor cosmetic issues
-
-Customer Issue: {{item.question}}
-Customer Type: {{item.customer_tier}}
-Business Impact: {{item.business_impact}}
-
-Urgency level (low/medium/high/critical):""",
-        "system_prompt": "You are a support triage expert classifying issue urgency.",
-    }
-
-
-class KnowledgeBaseAccuracyGrader(ScoreModelGrader):
-    """
-    Evaluates if the response accurately uses knowledge base information.
-    """
-
-    DEFAULT_CONFIG = {
-        **ScoreModelGrader.DEFAULT_CONFIG,
-        "range": [1, 5],
-        "pass_threshold": 4.0,
-        "prompt_template": """Rate how accurately this response uses knowledge base information (1-5):
-
-1 = Contradicts knowledge base or provides wrong information
-2 = Partially correct but has significant inaccuracies
-3 = Mostly correct with minor inaccuracies
-4 = Accurate and well-aligned with knowledge base
-5 = Perfectly accurate and expertly uses knowledge base
-
-Customer Query: {{item.question}}
-Relevant KB Articles: {{item.kb_articles}}
-Support Response: {{sample.output_text}}
-
-Accuracy score (1-5):""",
-        "system_prompt": "You are a knowledge management expert evaluating information accuracy.",
-    }
+    def __call__(self, example, pred, trace=None):
+        try:
+            agent_response = self.extract_field(pred, self.pred_field)
+            customer_query = self.extract_field(example, self.query_field)
+            
+            result = self.satisfaction_evaluator(
+                customer_query=customer_query,
+                agent_response=agent_response
+            )
+            
+            score = self._parse_satisfaction_score(result.satisfaction_score)
+            
+            return score if trace is None else score >= self.threshold
+        except Exception as e:
+            print(f"CustomerSatisfactionGrader error: {e}")
+            return 0.0 if trace is None else False
+    
+    def _parse_satisfaction_score(self, score_text: str) -> float:
+        """Parse satisfaction score from text output."""
+        try:
+            import re
+            numbers = re.findall(r"\d*\.?\d+", str(score_text))
+            if numbers:
+                score = float(numbers[0])
+                if score > 1.0:
+                    score = score / 5.0 if score <= 5.0 else 1.0
+                return max(0.0, min(1.0, score))
+            return 0.0
+        except:
+            return 0.0
 
 
 class CustomerSupportCompositeGrader(CompositeGrader):
     """
-    Comprehensive customer support grader combining multiple dimensions.
+    Comprehensive grader for customer support interactions.
+    Combines multiple evaluation criteria with appropriate weights.
     """
 
     def __init__(
         self,
-        weights: Optional[dict[str, float]] = None,
         include_empathy: bool = True,
         include_escalation: bool = True,
-        **kwargs,
+        include_satisfaction: bool = True,
+        **kwargs
     ):
-        # Default weights optimized for customer support
-        default_weights = {
-            "problem_resolution": 0.25,
-            "response_completeness": 0.20,
-            "tone_evaluation": 0.15,
-            "factual_accuracy": 0.15,
-            "safety": 0.10,
-            "compliance": 0.10,
-        }
-
-        if include_empathy:
-            default_weights["empathy"] = 0.05
-
-        if include_escalation:
-            # Adjust weights to accommodate escalation
-            for key in default_weights:
-                default_weights[key] *= 0.95
-            default_weights["escalation_detection"] = 0.05
-
-        # Use provided weights or defaults
-        final_weights = weights or default_weights
-
-        # Initialize graders
-        graders = {
-            "problem_resolution": (ProblemResolutionGrader(), final_weights.get("problem_resolution", 0.25)),
-            "response_completeness": (ResponseCompletenessGrader(), final_weights.get("response_completeness", 0.20)),
-            "factual_accuracy": (FactualAccuracyGrader(), final_weights.get("factual_accuracy", 0.15)),
-            "compliance": (ComplianceGrader(), final_weights.get("compliance", 0.10)),
-        }
-
-        if include_empathy:
-            graders["empathy"] = (EmpathyEvaluationGrader(), final_weights.get("empathy", 0.05))
-
-        if include_escalation:
-            graders["escalation_detection"] = (
-                EscalationDetectionGrader(),
-                final_weights.get("escalation_detection", 0.05),
-            )
+        graders = {}
+        
+        # Core graders (always included)
+        graders["helpfulness"] = (DSPyHelpfulnessGrader(), 0.25)
+        graders["accuracy"] = (DSPyFactualAccuracyGrader(), 0.25)
+        graders["tone"] = (DSPyToneEvaluationGrader(), 0.2)
+        graders["safety"] = (DSPySafetyGrader(), 0.1)
+        
+        # Optional graders
+        remaining_weight = 0.2
+        optional_count = sum([include_escalation, include_satisfaction])
+        
+        if optional_count > 0:
+            weight_per_optional = remaining_weight / optional_count
+            
+            if include_escalation:
+                graders["escalation"] = (EscalationDetectionGrader(), weight_per_optional)
+            
+            if include_satisfaction:
+                graders["satisfaction"] = (CustomerSatisfactionGrader(), weight_per_optional)
 
         super().__init__(graders, **kwargs)
 
 
-class CustomerSupportRouterGrader(CompositeGrader):
-    """
-    Specialized grader for customer support routing/intent classification systems.
-    """
-
-    def __init__(self, valid_intents: Optional[list[str]] = None, **kwargs):
-        graders = {
-            "intent_accuracy": (IntentAccuracyGrader(valid_intents=valid_intents or []), 0.6),
-            "urgency_assessment": (UrgencyAssessmentGrader(), 0.25),
-            "escalation_detection": (EscalationDetectionGrader(), 0.15),
-        }
-
-        super().__init__(graders, **kwargs)
+# Convenience functions
+def create_intent_classifier_grader(valid_intents=None):
+    """Create an intent classification grader."""
+    config = {}
+    if valid_intents:
+        config["valid_intents"] = valid_intents
+    return IntentAccuracyGrader(**config)
 
 
-# Convenience functions for common customer support scenarios
-def create_intent_classifier_grader(valid_intents: list[str]) -> IntentAccuracyGrader:
-    """Create an intent classification grader with specific valid intents."""
-    return IntentAccuracyGrader(valid_intents=valid_intents)
-
-
-def create_basic_support_grader() -> CustomerSupportCompositeGrader:
-    """Create a basic customer support grader without advanced features."""
+def create_basic_support_grader():
+    """Create a basic customer support grader."""
     return CustomerSupportCompositeGrader(include_empathy=False, include_escalation=False)
 
 
-def create_advanced_support_grader() -> CustomerSupportCompositeGrader:
-    """Create a comprehensive customer support grader with all features."""
+def create_advanced_support_grader():
+    """Create an advanced customer support grader with all features."""
     return CustomerSupportCompositeGrader(include_empathy=True, include_escalation=True)
-
-
-def create_routing_agent_grader(valid_intents: list[str]) -> CustomerSupportRouterGrader:
-    """Create a grader specifically for customer support routing agents."""
-    return CustomerSupportRouterGrader(valid_intents=valid_intents)

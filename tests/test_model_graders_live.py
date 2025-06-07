@@ -22,17 +22,16 @@ print(f"OPENAI_API_KEY: {os.getenv('OPENAI_API_KEY', 'NOT SET')[:20]}...")
 print(f"OPENAI_API_BASE: {os.getenv('OPENAI_API_BASE', 'NOT SET')}")
 print(f"OPENAI_MODEL: {os.getenv('OPENAI_MODEL', 'NOT SET')}")
 
-from dspy_kit.evaluation.graders.model_graders import (
-    BinaryClassificationGrader,
-    ContextUtilizationGrader,
-    FactualAccuracyGrader,
-    LabelModelGrader,
-    LikertScaleGrader,
-    SafetyGrader,
-    ScoreModelGrader,
-    ToneEvaluationGrader,
-    create_customer_support_grader,
-    create_qa_grader,
+from dspy_kit.evaluation.graders.dspy_model_graders import (
+    ContextUtilizationGrader as DSPyContextUtilizationGrader,
+    FactualAccuracyGrader as DSPyFactualAccuracyGrader,
+    LikertScaleGrader as DSPyLikertScaleGrader,
+    SafetyGrader as DSPySafetyGrader,
+    ToneEvaluationGrader as DSPyToneEvaluationGrader,
+    SemanticSimilarityGrader,
+    HelpfulnessGrader,
+    create_customer_support_grader as create_dspy_customer_support_grader,
+    create_qa_grader as create_dspy_qa_grader,
 )
 
 

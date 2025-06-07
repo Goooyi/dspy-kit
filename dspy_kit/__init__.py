@@ -53,26 +53,24 @@ __all__ = [
 ExactMatch = ExactMatchGrader
 FuzzyMatch = FuzzyMatchGrader
 Contains = ContainsGrader
-LLMJudge = ScoreModelGrader
-BinaryChoice = BinaryClassificationGrader
-LikertScale = LikertScaleGrader
+
+# Legacy aliases removed - use DSPy versions instead:
+# LLMJudge = ScoreModelGrader  # Use DSPyFactualAccuracyGrader, etc.
+# BinaryChoice = BinaryClassificationGrader  # Use DSPySafetyGrader, etc.
+# LikertScale = LikertScaleGrader  # Use DSPyLikertScaleGrader
 
 # Add aliases to exports
-__all__.extend(
-    [
-        "ExactMatch",
-        "FuzzyMatch",
-        "Contains",
-        "LLMJudge",
-        "BinaryChoice",
-        "LikertScale",
-        "Precision",
-        "Recall",
-        "F1Score",
-        "Accuracy",
-        "IntentClassifier",
-    ]
-)
+__all__.extend([
+    "ExactMatch", 
+    "FuzzyMatch", 
+    "Contains",
+    # Legacy aliases removed - use DSPy grader versions
+    "Precision",
+    "Recall",
+    "F1Score",
+    "Accuracy",
+    "IntentClassifier",
+])
 
 # Package metadata
 __description__ = "Comprehensive toolkit for DSPy programs: evaluation, synthetic data, and red teaming"
