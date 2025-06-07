@@ -137,9 +137,9 @@ class BaseGrader(ABC):
             return cls(**grader_config)
         else:
             # Dynamic import for other grader types
-            from . import model_graders, python_graders, string_graders
+            from . import dspy_model_graders, python_graders, string_graders
 
-            for module in [string_graders, model_graders, python_graders]:
+            for module in [string_graders, dspy_model_graders, python_graders]:
                 if hasattr(module, grader_type):
                     grader_class = getattr(module, grader_type)
                     return grader_class(**grader_config)

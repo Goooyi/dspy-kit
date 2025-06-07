@@ -60,17 +60,19 @@ Contains = ContainsGrader
 # LikertScale = LikertScaleGrader  # Use DSPyLikertScaleGrader
 
 # Add aliases to exports
-__all__.extend([
-    "ExactMatch", 
-    "FuzzyMatch", 
-    "Contains",
-    # Legacy aliases removed - use DSPy grader versions
-    "Precision",
-    "Recall",
-    "F1Score",
-    "Accuracy",
-    "IntentClassifier",
-])
+__all__.extend(
+    [
+        "ExactMatch",
+        "FuzzyMatch",
+        "Contains",
+        # Legacy aliases removed - use DSPy grader versions
+        "Precision",
+        "Recall",
+        "F1Score",
+        "Accuracy",
+        "IntentClassifier",
+    ]
+)
 
 # Package metadata
 __description__ = "Comprehensive toolkit for DSPy programs: evaluation, synthetic data, and red teaming"

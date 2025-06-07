@@ -1,24 +1,33 @@
 """Customer support domain-specific graders."""
 
+import re
 from typing import Any, Optional, Union
+
+import dspy
 
 from dspy_kit.evaluation.graders.base import CompositeGrader, ConfigurableGrader
 from dspy_kit.evaluation.graders.dspy_model_graders import (
-    FactualAccuracyGrader as DSPyFactualAccuracyGrader,
-    LikertScaleGrader as DSPyLikertScaleGrader,
-    SafetyGrader as DSPySafetyGrader,
-    ToneEvaluationGrader as DSPyToneEvaluationGrader,
-    HelpfulnessGrader as DSPyHelpfulnessGrader,
     BaseDSPyGrader,
 )
-import dspy
+from dspy_kit.evaluation.graders.dspy_model_graders import (
+    FactualAccuracyGrader as DSPyFactualAccuracyGrader,
+)
+from dspy_kit.evaluation.graders.dspy_model_graders import (
+    HelpfulnessGrader as DSPyHelpfulnessGrader,
+)
+from dspy_kit.evaluation.graders.dspy_model_graders import (
+    SafetyGrader as DSPySafetyGrader,
+)
+from dspy_kit.evaluation.graders.dspy_model_graders import (
+    ToneEvaluationGrader as DSPyToneEvaluationGrader,
+)
 from dspy_kit.evaluation.graders.string_graders import ExactMatchGrader
 
 
 class IntentAccuracyGrader(ConfigurableGrader):
     """
     Evaluates intent classification accuracy for customer support.
-    
+
     Checks if the AI correctly identified the customer's intent
     (billing, technical, cancellation, etc.)
     """
@@ -65,12 +74,10 @@ class EscalationDetectionGrader(BaseDSPyGrader):
         Determine if a customer query requires human escalation.
         Consider frustration level, complexity, and resolution attempts.
         """
-        
+
         customer_query: str = dspy.InputField()
         ai_response: str = dspy.InputField()
-        escalation_needed: str = dspy.OutputField(
-            desc="'yes' if escalation needed, 'no' if AI can handle"
-        )
+        escalation_needed: str = dspy.OutputField(desc="'yes' if escalation needed, 'no' if AI can handle")
         reasoning: str = dspy.OutputField(desc="Brief explanation of decision")
 
     def __init__(self, pred_field: str = "output", query_field: str = "question", **kwargs):
@@ -82,15 +89,12 @@ class EscalationDetectionGrader(BaseDSPyGrader):
         try:
             ai_response = self.extract_field(pred, self.pred_field)
             customer_query = self.extract_field(example, self.query_field)
-            
-            result = self.escalation_evaluator(
-                customer_query=customer_query,
-                ai_response=ai_response
-            )
-            
+
+            result = self.escalation_evaluator(customer_query=customer_query, ai_response=ai_response)
+
             needs_escalation = "yes" in result.escalation_needed.lower()
             score = 1.0 if needs_escalation else 0.0
-            
+
             return score if trace is None else needs_escalation
         except Exception as e:
             print(f"EscalationDetectionGrader error: {e}")
@@ -107,7 +111,7 @@ class CustomerSatisfactionGrader(BaseDSPyGrader):
         Predict customer satisfaction based on the support interaction.
         Consider resolution quality, response time, and tone.
         """
-        
+
         customer_query: str = dspy.InputField()
         agent_response: str = dspy.InputField()
         satisfaction_score: float = dspy.OutputField(
@@ -124,23 +128,19 @@ class CustomerSatisfactionGrader(BaseDSPyGrader):
         try:
             agent_response = self.extract_field(pred, self.pred_field)
             customer_query = self.extract_field(example, self.query_field)
-            
-            result = self.satisfaction_evaluator(
-                customer_query=customer_query,
-                agent_response=agent_response
-            )
-            
+
+            result = self.satisfaction_evaluator(customer_query=customer_query, agent_response=agent_response)
+
             score = self._parse_satisfaction_score(result.satisfaction_score)
-            
+
             return score if trace is None else score >= self.threshold
         except Exception as e:
             print(f"CustomerSatisfactionGrader error: {e}")
             return 0.0 if trace is None else False
-    
+
     def _parse_satisfaction_score(self, score_text: str) -> float:
         """Parse satisfaction score from text output."""
         try:
-            import re
             numbers = re.findall(r"\d*\.?\d+", str(score_text))
             if numbers:
                 score = float(numbers[0])
@@ -159,30 +159,26 @@ class CustomerSupportCompositeGrader(CompositeGrader):
     """
 
     def __init__(
-        self,
-        include_empathy: bool = True,
-        include_escalation: bool = True,
-        include_satisfaction: bool = True,
-        **kwargs
+        self, include_empathy: bool = True, include_escalation: bool = True, include_satisfaction: bool = True, **kwargs
     ):
         graders = {}
-        
+
         # Core graders (always included)
         graders["helpfulness"] = (DSPyHelpfulnessGrader(), 0.25)
         graders["accuracy"] = (DSPyFactualAccuracyGrader(), 0.25)
         graders["tone"] = (DSPyToneEvaluationGrader(), 0.2)
         graders["safety"] = (DSPySafetyGrader(), 0.1)
-        
+
         # Optional graders
         remaining_weight = 0.2
         optional_count = sum([include_escalation, include_satisfaction])
-        
+
         if optional_count > 0:
             weight_per_optional = remaining_weight / optional_count
-            
+
             if include_escalation:
                 graders["escalation"] = (EscalationDetectionGrader(), weight_per_optional)
-            
+
             if include_satisfaction:
                 graders["satisfaction"] = (CustomerSatisfactionGrader(), weight_per_optional)
 

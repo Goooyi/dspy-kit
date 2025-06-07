@@ -6,6 +6,7 @@ flexible field access patterns, solving the limitations of both traditional
 DSPy metrics (hardcoded fields) and current dspy-kit graders (not optimizable).
 """
 
+import re
 from typing import Any, Dict, Optional, Union
 
 import dspy
@@ -124,8 +125,6 @@ class SemanticSimilarityGrader(BaseDSPyGrader):
         """Parse similarity score from text output."""
         try:
             # Extract number from text (handle various formats)
-            import re
-
             numbers = re.findall(r"\d*\.?\d+", str(score_text))
             if numbers:
                 score = float(numbers[0])
@@ -181,8 +180,6 @@ class FactualAccuracyGrader(BaseDSPyGrader):
     def _parse_accuracy_score(self, score_text: str) -> float:
         """Parse accuracy score from text output."""
         try:
-            import re
-
             numbers = re.findall(r"\d*\.?\d+", str(score_text))
             if numbers:
                 score = float(numbers[0])
@@ -236,8 +233,6 @@ class RelevanceGrader(BaseDSPyGrader):
     def _parse_relevance_score(self, score_text: str) -> float:
         """Parse relevance score from text output."""
         try:
-            import re
-
             numbers = re.findall(r"\d*\.?\d+", str(score_text))
             if numbers:
                 score = float(numbers[0])
@@ -291,8 +286,6 @@ class HelpfulnessGrader(BaseDSPyGrader):
     def _parse_helpfulness_score(self, score_text: str) -> float:
         """Parse helpfulness score from text output."""
         try:
-            import re
-
             numbers = re.findall(r"\d*\.?\d+", str(score_text))
             if numbers:
                 score = float(numbers[0])
@@ -314,9 +307,7 @@ class SafetyGrader(BaseDSPyGrader):
         """
 
         response: str = dspy.InputField()
-        safety_label: str = dspy.OutputField(
-            desc="Safety classification: 'safe' or 'unsafe'"
-        )
+        safety_label: str = dspy.OutputField(desc="Safety classification: 'safe' or 'unsafe'")
         reasoning: str = dspy.OutputField(desc="Brief explanation of the safety assessment")
 
     def __init__(self, pred_field: str = "output", threshold: float = 0.5, **kwargs):
@@ -392,8 +383,6 @@ class ToneEvaluationGrader(BaseDSPyGrader):
     def _parse_tone_score(self, score_text: str) -> float:
         """Parse tone score from text output."""
         try:
-            import re
-
             numbers = re.findall(r"\d*\.?\d+", str(score_text))
             if numbers:
                 score = float(numbers[0])
@@ -425,8 +414,14 @@ class ContextUtilizationGrader(BaseDSPyGrader):
         )
         analysis: str = dspy.OutputField(desc="Brief analysis of how context was utilized")
 
-    def __init__(self, pred_field: str = "output", query_field: str = "question", 
-                 context_field: str = "context", threshold: float = 0.7, **kwargs):
+    def __init__(
+        self,
+        pred_field: str = "output",
+        query_field: str = "question",
+        context_field: str = "context",
+        threshold: float = 0.7,
+        **kwargs,
+    ):
         super().__init__(pred_field, query_field, threshold, **kwargs)
         self.query_field = query_field
         self.context_field = context_field
@@ -441,11 +436,7 @@ class ContextUtilizationGrader(BaseDSPyGrader):
             if not response.strip() or not context.strip():
                 return 0.0 if trace is None else False
 
-            result = self.context_evaluator(
-                context=context,
-                query=query,
-                response=response
-            )
+            result = self.context_evaluator(context=context, query=query, response=response)
 
             score = self._parse_utilization_score(result.utilization_score)
 
@@ -458,8 +449,6 @@ class ContextUtilizationGrader(BaseDSPyGrader):
     def _parse_utilization_score(self, score_text: str) -> float:
         """Parse utilization score from text output."""
         try:
-            import re
-
             numbers = re.findall(r"\d*\.?\d+", str(score_text))
             if numbers:
                 score = float(numbers[0])
@@ -491,8 +480,14 @@ class LikertScaleGrader(BaseDSPyGrader):
         )
         justification: str = dspy.OutputField(desc="Justification for the given score")
 
-    def __init__(self, pred_field: str = "output", query_field: str = "question", 
-                 criteria: str = "Overall quality", threshold: float = 3.0, **kwargs):
+    def __init__(
+        self,
+        pred_field: str = "output",
+        query_field: str = "question",
+        criteria: str = "Overall quality",
+        threshold: float = 3.0,
+        **kwargs,
+    ):
         super().__init__(pred_field, query_field, threshold, **kwargs)
         self.query_field = query_field
         self.criteria = criteria
@@ -506,11 +501,7 @@ class LikertScaleGrader(BaseDSPyGrader):
             if not response.strip():
                 return 0.0 if trace is None else False
 
-            result = self.likert_evaluator(
-                criteria=self.criteria,
-                response=response,
-                query=query
-            )
+            result = self.likert_evaluator(criteria=self.criteria, response=response, query=query)
 
             # Convert 1-5 scale to 0-1 scale
             raw_score = self._parse_likert_score(result.likert_score)
@@ -525,8 +516,6 @@ class LikertScaleGrader(BaseDSPyGrader):
     def _parse_likert_score(self, score_text: str) -> int:
         """Parse Likert score from text output."""
         try:
-            import re
-
             numbers = re.findall(r"\d+", str(score_text))
             if numbers:
                 score = int(numbers[0])
@@ -608,11 +597,11 @@ def create_customer_support_grader(
 
 def create_advanced_customer_support_grader(
     response_field: str = "response",
-    query_field: str = "customer_query", 
+    query_field: str = "customer_query",
     reference_field: str = "ideal_response",
     context_field: str = "context",
     include_safety: bool = True,
-    include_context_utilization: bool = True
+    include_context_utilization: bool = True,
 ) -> CompositeDSPyGrader:
     """
     Create an advanced customer support grader with additional components.
@@ -623,27 +612,26 @@ def create_advanced_customer_support_grader(
         "relevance": (RelevanceGrader(pred_field=response_field, query_field=query_field), 0.2),
         "tone": (ToneEvaluationGrader(pred_field=response_field, query_field=query_field), 0.15),
     }
-    
+
     remaining_weight = 0.15
     if include_safety:
         graders["safety"] = (SafetyGrader(pred_field=response_field), remaining_weight / 2)
         remaining_weight /= 2
-    
+
     if include_context_utilization:
-        graders["context_utilization"] = (ContextUtilizationGrader(
-            pred_field=response_field, 
-            query_field=query_field,
-            context_field=context_field
-        ), remaining_weight)
-    
+        graders["context_utilization"] = (
+            ContextUtilizationGrader(pred_field=response_field, query_field=query_field, context_field=context_field),
+            remaining_weight,
+        )
+
     return CompositeDSPyGrader(graders)
 
 
 def create_comprehensive_qa_grader(
-    answer_field: str = "answer", 
-    question_field: str = "question", 
+    answer_field: str = "answer",
+    question_field: str = "question",
     expected_field: str = "expected_answer",
-    context_field: str = "context"
+    context_field: str = "context",
 ) -> CompositeDSPyGrader:
     """
     Create a comprehensive QA grader with context utilization.
@@ -652,11 +640,12 @@ def create_comprehensive_qa_grader(
         {
             "accuracy": (FactualAccuracyGrader(pred_field=answer_field, ideal_field=expected_field), 0.4),
             "relevance": (RelevanceGrader(pred_field=answer_field, query_field=question_field), 0.3),
-            "context_utilization": (ContextUtilizationGrader(
-                pred_field=answer_field, 
-                query_field=question_field,
-                context_field=context_field
-            ), 0.2),
+            "context_utilization": (
+                ContextUtilizationGrader(
+                    pred_field=answer_field, query_field=question_field, context_field=context_field
+                ),
+                0.2,
+            ),
             "safety": (SafetyGrader(pred_field=answer_field), 0.1),
         }
     )
@@ -670,7 +659,7 @@ class OptimizableQASystem(dspy.Module):
 
     def __init__(self):
         super().__init__()
-        self.qa = dspy.ChainOfThought("question -> answer")
+        self.qa = dspy.ChainOfThought("question -> answer")  # type: ignore
 
     def forward(self, question):
         return self.qa(question=question)
