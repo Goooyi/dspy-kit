@@ -5,6 +5,7 @@ from typing import Any, Optional, Union
 from dspy_kit.evaluation.graders.base import CompositeGrader, ConfigurableGrader
 from dspy_kit.evaluation.graders.model_graders import (
     BinaryClassificationGrader,
+    FactualAccuracyGrader,
     LabelModelGrader,
     LikertScaleGrader,
     ScoreModelGrader,
@@ -22,35 +23,36 @@ class IntentAccuracyGrader(ConfigurableGrader):
         "pred": "predicted_intent",
         "ideal": "true_intent",
         "valid_intents": [
-            "billing", "technical_support", "account_management",
-            "product_inquiry", "complaint", "cancellation", "other"
+            "billing",
+            "technical_support",
+            "account_management",
+            "product_inquiry",
+            "complaint",
+            "cancellation",
+            "other",
         ],
         "strict_matching": True,
-        "case_sensitive": False
+        "case_sensitive": False,
     }
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        pred_field = getattr(self, 'pred', self.DEFAULT_CONFIG['pred'])
-        ideal_field = getattr(self, 'ideal', self.DEFAULT_CONFIG['ideal'])
-        case_sensitive = getattr(self, 'case_sensitive', self.DEFAULT_CONFIG['case_sensitive'])
+        pred_field = getattr(self, "pred", self.DEFAULT_CONFIG["pred"])
+        ideal_field = getattr(self, "ideal", self.DEFAULT_CONFIG["ideal"])
+        case_sensitive = getattr(self, "case_sensitive", self.DEFAULT_CONFIG["case_sensitive"])
 
-        self.exact_match_grader = ExactMatchGrader(
-            pred=pred_field,
-            ideal=ideal_field,
-            case_sensitive=case_sensitive
-        )
+        self.exact_match_grader = ExactMatchGrader(pred=pred_field, ideal=ideal_field, case_sensitive=case_sensitive)
 
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         # Extract predicted and true intents
-        pred_field = getattr(self, 'pred', self.DEFAULT_CONFIG['pred'])
-        ideal_field = getattr(self, 'ideal', self.DEFAULT_CONFIG['ideal'])
+        pred_field = getattr(self, "pred", self.DEFAULT_CONFIG["pred"])
+        ideal_field = getattr(self, "ideal", self.DEFAULT_CONFIG["ideal"])
         predicted_intent = self.extract_field(pred, pred_field)
         true_intent = self.extract_field(example, ideal_field)
 
         # Validate intents are in valid set
-        strict_matching = getattr(self, 'strict_matching', self.DEFAULT_CONFIG['strict_matching'])
-        valid_intents = getattr(self, 'valid_intents', self.DEFAULT_CONFIG['valid_intents'])
+        strict_matching = getattr(self, "strict_matching", self.DEFAULT_CONFIG["strict_matching"])
+        valid_intents = getattr(self, "valid_intents", self.DEFAULT_CONFIG["valid_intents"])
         if strict_matching:
             if predicted_intent not in valid_intents:
                 return 0.0 if trace is None else False
@@ -84,7 +86,7 @@ Customer History: {{item.interaction_history}}
 
 Should this be escalated to a human? (yes/no):""",
         "labels": ["yes", "no"],
-        "passing_labels": ["yes"]
+        "passing_labels": ["yes"],
     }
 
 
@@ -110,7 +112,7 @@ Support Response: {{sample.output_text}}
 Resolution Status: {{item.resolution_status}}
 
 Predicted satisfaction score (1-5):""",
-        "system_prompt": "You are a customer experience expert predicting satisfaction scores."
+        "system_prompt": "You are a customer experience expert predicting satisfaction scores.",
     }
 
 
@@ -137,7 +139,7 @@ Customer Sentiment: {{item.customer_sentiment}}
 Support Response: {{sample.output_text}}
 
 Empathy rating (1-5):""",
-        "system_prompt": "You are an emotional intelligence expert evaluating empathy in customer service."
+        "system_prompt": "You are an emotional intelligence expert evaluating empathy in customer service.",
     }
 
 
@@ -164,7 +166,7 @@ Support Response: {{sample.output_text}}
 Available Solutions: {{item.available_solutions}}
 
 Resolution quality (1-5):""",
-        "system_prompt": "You are a customer support quality expert evaluating problem resolution."
+        "system_prompt": "You are a customer support quality expert evaluating problem resolution.",
     }
 
 
@@ -190,7 +192,7 @@ Customer Account Status: {{item.account_status}}
 
 Can be resolved in first contact? (yes/no):""",
         "labels": ["yes", "no"],
-        "passing_labels": ["yes"]
+        "passing_labels": ["yes"],
     }
 
 
@@ -217,7 +219,7 @@ Company Policies: {{item.company_policies}}
 
 Is compliant? (yes/no):""",
         "labels": ["yes", "no"],
-        "passing_labels": ["yes"]
+        "passing_labels": ["yes"],
     }
 
 
@@ -243,7 +245,7 @@ Key Points to Address: {{item.key_points}}
 Support Response: {{sample.output_text}}
 
 Completeness score (1-5):""",
-        "system_prompt": "You are a quality assurance expert evaluating response completeness."
+        "system_prompt": "You are a quality assurance expert evaluating response completeness.",
     }
 
 
@@ -268,7 +270,7 @@ Customer Type: {{item.customer_tier}}
 Business Impact: {{item.business_impact}}
 
 Urgency level (low/medium/high/critical):""",
-        "system_prompt": "You are a support triage expert classifying issue urgency."
+        "system_prompt": "You are a support triage expert classifying issue urgency.",
     }
 
 
@@ -294,7 +296,7 @@ Relevant KB Articles: {{item.kb_articles}}
 Support Response: {{sample.output_text}}
 
 Accuracy score (1-5):""",
-        "system_prompt": "You are a knowledge management expert evaluating information accuracy."
+        "system_prompt": "You are a knowledge management expert evaluating information accuracy.",
     }
 
 
@@ -308,7 +310,7 @@ class CustomerSupportCompositeGrader(CompositeGrader):
         weights: Optional[dict[str, float]] = None,
         include_empathy: bool = True,
         include_escalation: bool = True,
-        **kwargs
+        **kwargs,
     ):
         # Default weights optimized for customer support
         default_weights = {
@@ -344,7 +346,10 @@ class CustomerSupportCompositeGrader(CompositeGrader):
             graders["empathy"] = (EmpathyEvaluationGrader(), final_weights.get("empathy", 0.05))
 
         if include_escalation:
-            graders["escalation_detection"] = (EscalationDetectionGrader(), final_weights.get("escalation_detection", 0.05))
+            graders["escalation_detection"] = (
+                EscalationDetectionGrader(),
+                final_weights.get("escalation_detection", 0.05),
+            )
 
         super().__init__(graders, **kwargs)
 
@@ -356,10 +361,7 @@ class CustomerSupportRouterGrader(CompositeGrader):
 
     def __init__(self, valid_intents: Optional[list[str]] = None, **kwargs):
         graders = {
-            "intent_accuracy": (
-                IntentAccuracyGrader(valid_intents=valid_intents or []),
-                0.6
-            ),
+            "intent_accuracy": (IntentAccuracyGrader(valid_intents=valid_intents or []), 0.6),
             "urgency_assessment": (UrgencyAssessmentGrader(), 0.25),
             "escalation_detection": (EscalationDetectionGrader(), 0.15),
         }
@@ -375,18 +377,12 @@ def create_intent_classifier_grader(valid_intents: list[str]) -> IntentAccuracyG
 
 def create_basic_support_grader() -> CustomerSupportCompositeGrader:
     """Create a basic customer support grader without advanced features."""
-    return CustomerSupportCompositeGrader(
-        include_empathy=False,
-        include_escalation=False
-    )
+    return CustomerSupportCompositeGrader(include_empathy=False, include_escalation=False)
 
 
 def create_advanced_support_grader() -> CustomerSupportCompositeGrader:
     """Create a comprehensive customer support grader with all features."""
-    return CustomerSupportCompositeGrader(
-        include_empathy=True,
-        include_escalation=True
-    )
+    return CustomerSupportCompositeGrader(include_empathy=True, include_escalation=True)
 
 
 def create_routing_agent_grader(valid_intents: list[str]) -> CustomerSupportRouterGrader:

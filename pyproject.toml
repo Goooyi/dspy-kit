@@ -38,6 +38,8 @@ dependencies = [
     "nltk>=3.8.0",
     "pyyaml>=6.0",
     "typing-extensions>=4.0.0",
+    "litellm>=1.72.0",
+    "python-dotenv>=1.1.0",
 ]
 
 [project.optional-dependencies]
@@ -56,6 +58,8 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "pre-commit>=4.2.0",
+    "litellm>=1.72.0",
+    "dotenv>=0.9.9",
 ]
 
 [project.urls]
@@ -78,8 +82,8 @@ include = [
 ]
 
 [tool.pyright]
-venvPath = ".venv"
-venv = ""
+venvPath = "."
+venv = ".venv"
 exclude = [
     "**/node_modules",
     "**/__pycache__",
@@ -108,8 +112,13 @@ select = [
     "TID252", # Absolute imports
 ]
 ignore = [
-    "E501", # Line too long (handled by formatter)
-    "B008", # Function calls in argument defaults
+    "E501",  # Line too long (handled by formatter)
+    "B008",  # Function calls in argument defaults
+    "UP006", # Use `dict` instead of `typing.Dict`
+    "UP007", # Use `list` instead of `typing.List`
+    "UP008", # Use `set` instead of `typing.Set`
+    "UP009", # Use `tuple` instead of `typing.Tuple`
+    "UP035", # Import replacements for deprecated `typing` attributes
 ]
 fixable = ["ALL"]
 unfixable = []
@@ -118,6 +127,7 @@ unfixable = []
 docstring-code-format = false
 indent-style = "space"
 line-ending = "auto"
+
 
 [tool.ruff.lint.per-file-ignores]
 "**/{tests,testing,docs}/*" = ["ALL"]

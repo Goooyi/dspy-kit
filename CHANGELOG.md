@@ -15,38 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Renamed**: `dspy_evals` → `dspy_kit`
 - **Restructured**: Organized into specialized modules
   - `dspy_kit.evaluation.graders` - All evaluation graders
-  - `dspy_kit.evaluation.domains` - Domain-specific evaluators  
+  - `dspy_kit.evaluation.domains` - Domain-specific evaluators
   - `dspy_kit.utils` - Shared utilities
   - `dspy_kit.synthetic` - Synthetic data generation (placeholder)
   - `dspy_kit.red_team` - Red teaming capabilities (placeholder)
 
 #### ✨ Added
-- **Classification Graders**: New comprehensive classification metrics
-  - `PrecisionGrader` - Precision calculation with multiple averaging strategies
-  - `RecallGrader` - Recall calculation with multiple averaging strategies  
-  - `F1Grader` - F1 score calculation with multiple averaging strategies
-  - `AccuracyGrader` - Accuracy calculation for classification tasks
-  - `ClassificationMetricsGrader` - Composite grader combining all classification metrics
-  - `IntentClassificationGrader` - Specialized grader for customer support intent classification
-
-- **Classification Features**:
-  - Multiple averaging strategies: macro, micro, weighted, binary
-  - Flexible field mapping for predictions and ground truth
-  - Label normalization and case-insensitive matching
-  - Batch evaluation with `batch_calculate()` method
-  - Integration with DSPy's evaluation and optimization workflows
-
-- **Convenience Functions**:
-  - `create_intent_classifier_grader()` - Quick intent classification setup
-  - `create_classification_grader()` - General classification grader setup
-  - `create_binary_classification_grader()` - Binary classification setup
-
-- **Convenience Aliases**:
-  - `Precision` → `PrecisionGrader`
-  - `Recall` → `RecallGrader` 
-  - `F1Score` → `F1Grader`
-  - `Accuracy` → `AccuracyGrader`
-  - `IntentClassifier` → `IntentClassificationGrader`
 
 - **Shared Utilities** (`dspy_kit.utils`):
   - Configuration loading/saving (JSON, YAML)
@@ -76,13 +50,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated README.md with new package name and features
 - Added MIGRATION.md with step-by-step migration guide
 - Updated all examples to use new import structure
-- Added classification grader examples and tutorials
 
 #### 🔧 Development
 - Updated pyproject.toml for new package name
 - Updated test files for new import structure
 - Maintained all existing test coverage
-- Added tests for new classification graders
 
 ## [0.1.0] - 2024-12-03
 
@@ -133,9 +105,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Comprehensive test suite
   - Example usage scripts
   - Detailed documentation
-
----
-
-## Migration from dspy-evals
-
-If you're upgrading from `dspy-evals` to `dspy-kit`, see [MIGRATION.md](MIGRATION.md) for a complete migration guide. The process is straightforward and maintains 100% backward compatibility.

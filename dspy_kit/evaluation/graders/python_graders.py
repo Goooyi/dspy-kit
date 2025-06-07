@@ -20,14 +20,22 @@ class PythonGrader(BaseGrader):
         allowed_imports: Optional[list[str]] = None,
         timeout: float = 30.0,
         name: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(name, **kwargs)
         self.source_code = source_code
         self.timeout = timeout
         self.allowed_imports = allowed_imports or [
-            "math", "re", "json", "statistics", "collections",
-            "rapidfuzz", "numpy", "scipy", "sklearn", "rouge_score"
+            "math",
+            "re",
+            "json",
+            "statistics",
+            "collections",
+            "rapidfuzz",
+            "numpy",
+            "scipy",
+            "sklearn",
+            "rouge_score",
         ]
 
         # Compile and validate the code
@@ -46,10 +54,10 @@ class PythonGrader(BaseGrader):
             exec(self.source_code, exec_globals)
 
             # Extract the grade function
-            if 'grade' not in exec_globals:
+            if "grade" not in exec_globals:
                 raise ValueError("Python grader must define a 'grade' function")
 
-            grade_func = exec_globals['grade']
+            grade_func = exec_globals["grade"]
 
             # Validate function signature
             sig = inspect.signature(grade_func)
@@ -63,16 +71,34 @@ class PythonGrader(BaseGrader):
 
     def _create_safe_globals(self) -> dict[str, Any]:
         """Create a restricted global namespace for code execution."""
-        safe_globals = {
-            '__builtins__': {
-                'len': len, 'str': str, 'int': int, 'float': float, 'bool': bool,
-                'list': list, 'dict': dict, 'tuple': tuple, 'set': set,
-                'min': min, 'max': max, 'sum': sum, 'abs': abs,
-                'round': round, 'sorted': sorted, 'reversed': reversed,
-                'enumerate': enumerate, 'zip': zip, 'range': range,
-                'isinstance': isinstance, 'hasattr': hasattr, 'getattr': getattr,
-                'ValueError': ValueError, 'TypeError': TypeError,
-                'Exception': Exception, 'print': print
+        safe_globals: dict[str, Any] = {
+            "__builtins__": {
+                "len": len,
+                "str": str,
+                "int": int,
+                "float": float,
+                "bool": bool,
+                "list": list,
+                "dict": dict,
+                "tuple": tuple,
+                "set": set,
+                "min": min,
+                "max": max,
+                "sum": sum,
+                "abs": abs,
+                "round": round,
+                "sorted": sorted,
+                "reversed": reversed,
+                "enumerate": enumerate,
+                "zip": zip,
+                "range": range,
+                "isinstance": isinstance,
+                "hasattr": hasattr,
+                "getattr": getattr,
+                "ValueError": ValueError,
+                "TypeError": TypeError,
+                "Exception": Exception,
+                "print": print,
             }
         }
 
@@ -123,7 +149,7 @@ class PythonGrader(BaseGrader):
         }
 
         # Add all fields from pred if it's an object
-        if hasattr(pred, '__dict__'):
+        if hasattr(pred, "__dict__"):
             sample.update(pred.__dict__)
         elif isinstance(pred, dict):
             sample.update(pred)
@@ -138,7 +164,7 @@ class PythonGrader(BaseGrader):
         }
 
         # Add all fields from example if it's an object
-        if hasattr(example, '__dict__'):
+        if hasattr(example, "__dict__"):
             item.update(example.__dict__)
         elif isinstance(example, dict):
             item.update(example)
@@ -353,7 +379,7 @@ def grade(sample, item):
     return 1.0 if output_text == reference_answer else 0.0
 """,
         "allowed_imports": ["math", "re", "json", "rapidfuzz", "numpy"],
-        "timeout": 30.0
+        "timeout": 30.0,
     }
 
 
@@ -371,7 +397,7 @@ def create_lambda_grader(func: Callable[[dict, dict], float], **kwargs) -> Pytho
     try:
         source = inspect.getsource(func)
         # Extract the lambda body
-        lambda_body = source.split('lambda')[1].split(':')[1].strip()
+        lambda_body = source.split("lambda")[1].split(":")[1].strip()
 
         source_code = f"""
 def grade(sample, item):

@@ -11,7 +11,7 @@ from .base import (
 
 # Model-based graders (LLM-as-a-judge)
 from .model_graders import (
-    AsyncModelGrader,
+    ModelGrader,
     BinaryClassificationGrader,
     ContextUtilizationGrader,
     FactualAccuracyGrader,
@@ -54,20 +54,6 @@ from .string_graders import (
     create_fuzzy_match,
 )
 
-# Classification graders
-from .classification_graders import (
-    AccuracyGrader,
-    ClassificationGrader,
-    ClassificationMetricsGrader,
-    F1Grader,
-    IntentClassificationGrader,
-    PrecisionGrader,
-    RecallGrader,
-    create_binary_classification_grader,
-    create_classification_grader,
-    create_intent_classifier_grader,
-)
-
 __all__ = [
     # Base classes
     "BaseGrader",
@@ -87,7 +73,7 @@ __all__ = [
     "create_fuzzy_match",
     "create_contains_check",
     # Model graders
-    "AsyncModelGrader",
+    "ModelGrader",
     "ScoreModelGrader",
     "LabelModelGrader",
     "LikertScaleGrader",
@@ -111,17 +97,6 @@ __all__ = [
     "create_python_grader_from_file",
     "create_lambda_grader",
     "UTILITY_FUNCTIONS",
-    # Classification graders
-    "ClassificationGrader",
-    "PrecisionGrader",
-    "RecallGrader",
-    "F1Grader",
-    "AccuracyGrader",
-    "ClassificationMetricsGrader",
-    "IntentClassificationGrader",
-    "create_intent_classifier_grader",
-    "create_classification_grader",
-    "create_binary_classification_grader",
 ]
 
 # Convenience aliases for common patterns
@@ -130,8 +105,3 @@ FuzzyMatch = FuzzyMatchGrader
 Contains = ContainsGrader
 LLMJudge = ScoreModelGrader
 BinaryChoice = BinaryClassificationGrader
-Precision = PrecisionGrader
-Recall = RecallGrader
-F1Score = F1Grader
-Accuracy = AccuracyGrader
-IntentClassifier = IntentClassificationGrader

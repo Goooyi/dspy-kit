@@ -7,6 +7,7 @@ from typing import Any, Callable, Optional, Union
 
 try:
     import yaml
+
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
@@ -27,7 +28,9 @@ class BaseGrader(ABC):
         self._cache = {}
 
     @abstractmethod
-    def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
+    def __call__(
+        self, example: Any, pred: Any, trace: Optional[Any] = None
+    ) -> Union[float, bool]:
         """
         Evaluate a prediction against an example.
 
@@ -42,7 +45,9 @@ class BaseGrader(ABC):
         """
         pass
 
-    async def acall(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
+    async def acall(
+        self, example: Any, pred: Any, trace: Optional[Any] = None
+    ) -> Union[float, bool]:
         """
         Async version of __call__. Override this for model-based graders.
         Default implementation calls the sync version.
@@ -69,7 +74,11 @@ class BaseGrader(ABC):
         return async_metric
 
     async def batch_evaluate(
-        self, examples: list[Any], predictions: list[Any], traces: Optional[list[Any]] = None, max_concurrent: int = 10
+        self,
+        examples: list[Any],
+        predictions: list[Any],
+        traces: Optional[list[Any]] = None,
+        max_concurrent: int = 10,
     ) -> list[Union[float, bool]]:
         """
         Batch evaluation with concurrency control.
@@ -93,7 +102,8 @@ class BaseGrader(ABC):
                 return await self.acall(example, pred, trace)
 
         tasks = [
-            evaluate_with_semaphore(example, pred, trace) for example, pred, trace in zip(examples, predictions, traces)
+            evaluate_with_semaphore(example, pred, trace)
+            for example, pred, trace in zip(examples, predictions, traces)
         ]
 
         return await asyncio.gather(*tasks)
@@ -111,9 +121,11 @@ class BaseGrader(ABC):
         """
         if isinstance(config_path, (str, Path)):
             if not YAML_AVAILABLE:
-                raise ImportError("PyYAML is required for loading YAML config files")
+                raise ImportError(
+                    "PyYAML is required for loading YAML config files"
+                )
             with open(config_path) as f:
-                config = yaml.safe_load(f)
+                config = yaml.safe_load(f)  # type:ignore
         else:
             config = config_path
 
@@ -156,7 +168,9 @@ class BaseGrader(ABC):
 
         return str(value) if value is not None else default
 
-    def validate_trace(self, trace: Any, step_validators: Optional[dict[str, Callable]] = None) -> bool:
+    def validate_trace(
+        self, trace: Any, step_validators: Optional[dict[str, Callable]] = None
+    ) -> bool:
         """
         Validate intermediate steps in trace for optimization.
 
@@ -183,6 +197,7 @@ class BaseGrader(ABC):
 class CompositeGrader(BaseGrader):
     """
     Combines multiple graders into a single score following OpenAI's multigrader pattern.
+    see: https://platform.openai.com/docs/api-reference/graders/multi
 
     Example:
         composite = CompositeGrader({
@@ -207,7 +222,9 @@ class CompositeGrader(BaseGrader):
         if abs(total_weight - 1.0) > 1e-6:
             raise ValueError(f"Weights must sum to 1.0, got {total_weight}")
 
-    def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
+    def __call__(
+        self, example: Any, pred: Any, trace: Optional[Any] = None
+    ) -> Union[float, bool]:
         scores = {}
 
         for name, (grader, weight) in self.graders.items():
@@ -216,7 +233,9 @@ class CompositeGrader(BaseGrader):
 
         return self.aggregation_fn(scores, trace)
 
-    async def acall(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
+    async def acall(
+        self, example: Any, pred: Any, trace: Optional[Any] = None
+    ) -> Union[float, bool]:
         scores = {}
 
         for name, (grader, weight) in self.graders.items():
@@ -225,7 +244,9 @@ class CompositeGrader(BaseGrader):
 
         return self.aggregation_fn(scores, trace)
 
-    def _weighted_average(self, scores: dict[str, tuple[float, float]], trace: Optional[Any]) -> Union[float, bool]:
+    def _weighted_average(
+        self, scores: dict[str, tuple[float, float]], trace: Optional[Any]
+    ) -> Union[float, bool]:
         """Default aggregation: weighted average."""
         if trace is None:  # Evaluation mode
             return sum(score * weight for score, weight in scores.values())
@@ -237,14 +258,22 @@ class EdgeCaseAwareGrader(BaseGrader):
     """
     Wrapper grader that handles edge cases before delegating to base grader.
     Implements OpenAI's edge case handling recommendations.
+    see: https://platform.openai.com/docs/guides/evals-design#handle-edge-cases
     """
 
-    def __init__(self, base_grader: BaseGrader, edge_case_handlers: dict[str, Callable], name: Optional[str] = None):
+    def __init__(
+        self,
+        base_grader: BaseGrader,
+        edge_case_handlers: dict[str, Callable],
+        name: Optional[str] = None,
+    ):
         super().__init__(name)
         self.base_grader = base_grader
         self.edge_case_handlers = edge_case_handlers
 
-    def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
+    def __call__(
+        self, example: Any, pred: Any, trace: Optional[Any] = None
+    ) -> Union[float, bool]:
         # Check for edge cases first
         for case_name, handler in self.edge_case_handlers.items():
             if handler(example, pred):
@@ -253,7 +282,9 @@ class EdgeCaseAwareGrader(BaseGrader):
         # No edge case detected, use base grader
         return self.base_grader(example, pred, trace)
 
-    async def acall(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
+    async def acall(
+        self, example: Any, pred: Any, trace: Optional[Any] = None
+    ) -> Union[float, bool]:
         # Check for edge cases first
         for case_name, handler in self.edge_case_handlers.items():
             if handler(example, pred):
@@ -262,7 +293,9 @@ class EdgeCaseAwareGrader(BaseGrader):
         # No edge case detected, use base grader
         return await self.base_grader.acall(example, pred, trace)
 
-    def _handle_edge_case(self, case_name: str, example: Any, pred: Any, trace: Optional[Any]) -> Union[float, bool]:
+    def _handle_edge_case(
+        self, case_name: str, example: Any, pred: Any, trace: Optional[Any]
+    ) -> Union[float, bool]:
         """Handle specific edge case. Override for custom behavior."""
         if case_name == "out_of_scope":
             return 0.0 if trace is None else False
@@ -307,21 +340,23 @@ class ConfigurableGrader(BaseGrader):
     # Default configuration - override in subclasses
     DEFAULT_CONFIG = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, name: Optional[str] = None, **kwargs):
         # Merge with default config
         config = {**self.DEFAULT_CONFIG, **kwargs}
-        super().__init__(**config)
+        super().__init__(name=name, **config)
 
         # Set all config items as attributes
         for key, value in config.items():
-            if key != "name":
+            if key != "name": # 'name' is handled by BaseGrader
                 setattr(self, key, value)
 
     @classmethod
     def from_yaml(cls, yaml_path: Union[str, Path]) -> "ConfigurableGrader":
         """Create grader from YAML configuration."""
         if not YAML_AVAILABLE:
-            raise ImportError("PyYAML is required for loading YAML config files")
+            raise ImportError(
+                "PyYAML is required for loading YAML config files"
+            )
         with open(yaml_path) as f:
-            config = yaml.safe_load(f)
+            config = yaml.safe_load(f)  # type:ignore
         return cls(**config)

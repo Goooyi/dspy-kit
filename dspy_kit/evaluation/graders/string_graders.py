@@ -1,19 +1,32 @@
 """String-based graders for exact and fuzzy matching with comprehensive metrics."""
 
 import re
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-from .base import BaseGrader, ConfigurableGrader
+from .base import ConfigurableGrader
+
+# Type checking imports
+if TYPE_CHECKING:
+    from nltk.tokenize import word_tokenize
+    from nltk.translate.bleu_score import sentence_bleu
+    from nltk.translate.meteor_score import meteor_score
+    from rapidfuzz import fuzz, utils
+    from rouge_score import rouge_scorer
+    from sentence_transformers import SentenceTransformer
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
 
 # Optional imports with fallbacks
 try:
     from rapidfuzz import fuzz, utils
+
     RAPIDFUZZ_AVAILABLE = True
 except ImportError:
     RAPIDFUZZ_AVAILABLE = False
 
 try:
     from sentence_transformers import SentenceTransformer
+
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
     SENTENCE_TRANSFORMERS_AVAILABLE = False
@@ -21,20 +34,23 @@ except ImportError:
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.metrics.pairwise import cosine_similarity
+
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
 
 try:
     from rouge_score import rouge_scorer
+
     ROUGE_AVAILABLE = True
 except ImportError:
     ROUGE_AVAILABLE = False
 
 try:
-    from nltk.translate.bleu_score import sentence_bleu
     from nltk.tokenize import word_tokenize
+    from nltk.translate.bleu_score import sentence_bleu
     from nltk.translate.meteor_score import meteor_score
+
     NLTK_AVAILABLE = True
 except ImportError:
     NLTK_AVAILABLE = False
@@ -62,13 +78,13 @@ class StringCheckGrader(ConfigurableGrader):
         "ideal": "answer",
         "case_sensitive": True,
         "normalize_whitespace": True,
-        "strip_text": True
+        "strip_text": True,
     }
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        operation = getattr(self, 'operation', self.DEFAULT_CONFIG['operation'])
+        operation = getattr(self, "operation", self.DEFAULT_CONFIG["operation"])
         valid_operations = ["eq", "ne", "like", "ilike", "startswith", "endswith", "regex"]
         if operation not in valid_operations:
             raise ValueError(f"Unsupported operation: {operation}. Valid: {valid_operations}")
@@ -76,8 +92,8 @@ class StringCheckGrader(ConfigurableGrader):
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         try:
             # Extract strings to compare
-            pred_field = getattr(self, 'pred', self.DEFAULT_CONFIG['pred'])
-            ideal_field = getattr(self, 'ideal', self.DEFAULT_CONFIG['ideal'])
+            pred_field = getattr(self, "pred", self.DEFAULT_CONFIG["pred"])
+            ideal_field = getattr(self, "ideal", self.DEFAULT_CONFIG["ideal"])
 
             input_text = self._extract_and_normalize(pred, pred_field)
             reference_text = self._extract_and_normalize(example, ideal_field)
@@ -95,15 +111,15 @@ class StringCheckGrader(ConfigurableGrader):
         """Extract and normalize text field."""
         text = self.extract_field(obj, field)
 
-        strip_text = getattr(self, 'strip_text', self.DEFAULT_CONFIG['strip_text'])
+        strip_text = getattr(self, "strip_text", self.DEFAULT_CONFIG["strip_text"])
         if strip_text:
             text = text.strip()
 
-        normalize_whitespace = getattr(self, 'normalize_whitespace', self.DEFAULT_CONFIG['normalize_whitespace'])
+        normalize_whitespace = getattr(self, "normalize_whitespace", self.DEFAULT_CONFIG["normalize_whitespace"])
         if normalize_whitespace:
-            text = re.sub(r'\s+', ' ', text)
+            text = re.sub(r"\s+", " ", text)
 
-        case_sensitive = getattr(self, 'case_sensitive', self.DEFAULT_CONFIG['case_sensitive'])
+        case_sensitive = getattr(self, "case_sensitive", self.DEFAULT_CONFIG["case_sensitive"])
         if not case_sensitive:
             text = text.lower()
 
@@ -111,8 +127,8 @@ class StringCheckGrader(ConfigurableGrader):
 
     def _compare_strings(self, input_text: str, reference_text: str) -> bool:
         """Perform string comparison based on operation."""
-        operation = getattr(self, 'operation', self.DEFAULT_CONFIG['operation'])
-        case_sensitive = getattr(self, 'case_sensitive', self.DEFAULT_CONFIG['case_sensitive'])
+        operation = getattr(self, "operation", self.DEFAULT_CONFIG["operation"])
+        case_sensitive = getattr(self, "case_sensitive", self.DEFAULT_CONFIG["case_sensitive"])
 
         if operation == "eq":
             return input_text == reference_text
@@ -155,29 +171,36 @@ class TextSimilarityGrader(ConfigurableGrader):
         "pred": "output",
         "ideal": "answer",
         "normalize_text": True,
-        "embedding_model": "all-MiniLM-L6-v2"
+        "embedding_model": "all-MiniLM-L6-v2",
     }
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        metric = getattr(self, 'metric', self.DEFAULT_CONFIG['metric'])
+        metric = getattr(self, "metric", self.DEFAULT_CONFIG["metric"])
         supported_metrics = [
-            "fuzzy_match", "bleu", "rouge_1", "rouge_2", "rouge_l",
-            "meteor", "cosine", "jaccard", "levenshtein"
+            "fuzzy_match",
+            "bleu",
+            "rouge_1",
+            "rouge_2",
+            "rouge_l",
+            "meteor",
+            "cosine",
+            "jaccard",
+            "levenshtein",
         ]
         if metric not in supported_metrics:
             raise ValueError(f"Unsupported metric: {metric}. Supported: {supported_metrics}")
 
     def __call__(self, example: Any, pred: Any, trace: Optional[Any] = None) -> Union[float, bool]:
         try:
-            pred_field = getattr(self, 'pred', self.DEFAULT_CONFIG['pred'])
-            ideal_field = getattr(self, 'ideal', self.DEFAULT_CONFIG['ideal'])
+            pred_field = getattr(self, "pred", self.DEFAULT_CONFIG["pred"])
+            ideal_field = getattr(self, "ideal", self.DEFAULT_CONFIG["ideal"])
 
             input_text = self.extract_field(pred, pred_field)
             reference_text = self.extract_field(example, ideal_field)
 
-            normalize_text = getattr(self, 'normalize_text', self.DEFAULT_CONFIG['normalize_text'])
+            normalize_text = getattr(self, "normalize_text", self.DEFAULT_CONFIG["normalize_text"])
             if normalize_text:
                 input_text = self._normalize_text(input_text)
                 reference_text = self._normalize_text(reference_text)
@@ -188,7 +211,7 @@ class TextSimilarityGrader(ConfigurableGrader):
             if trace is None:
                 return score
             else:
-                threshold = getattr(self, 'threshold', self.DEFAULT_CONFIG['threshold'])
+                threshold = getattr(self, "threshold", self.DEFAULT_CONFIG["threshold"])
                 return score >= threshold
 
         except Exception as e:
@@ -198,7 +221,7 @@ class TextSimilarityGrader(ConfigurableGrader):
     def _normalize_text(self, text: str) -> str:
         """Normalize text for comparison."""
         # Remove extra whitespace
-        text = re.sub(r'\s+', ' ', text.strip())
+        text = re.sub(r"\s+", " ", text.strip())
         # Convert to lowercase
         text = text.lower()
         return text
@@ -208,7 +231,7 @@ class TextSimilarityGrader(ConfigurableGrader):
         if not input_text or not reference_text:
             return 0.0
 
-        metric = getattr(self, 'metric', self.DEFAULT_CONFIG['metric'])
+        metric = getattr(self, "metric", self.DEFAULT_CONFIG["metric"])
 
         if metric == "fuzzy_match":
             return self._fuzzy_match_score(input_text, reference_text)
@@ -241,7 +264,12 @@ class TextSimilarityGrader(ConfigurableGrader):
             try:
                 ref_tokens = [word_tokenize(reference.lower())]
                 cand_tokens = word_tokenize(candidate.lower())
-                return sentence_bleu(ref_tokens, cand_tokens)
+                score = sentence_bleu(ref_tokens, cand_tokens)
+                # Ensure we always return a float
+                if isinstance(score, (int, float)):
+                    return float(score)
+                else:
+                    return 0.0
             except Exception:
                 return self._simple_bleu(candidate, reference)
         else:
@@ -262,9 +290,8 @@ class TextSimilarityGrader(ConfigurableGrader):
         """Calculate ROUGE score."""
         if ROUGE_AVAILABLE:
             try:
-                metric = getattr(self, 'metric', self.DEFAULT_CONFIG['metric'])
-                rouge_type = "rouge1" if metric == "rouge_1" else \
-                            "rouge2" if metric == "rouge_2" else "rougeL"
+                metric = getattr(self, "metric", self.DEFAULT_CONFIG["metric"])
+                rouge_type = "rouge1" if metric == "rouge_1" else "rouge2" if metric == "rouge_2" else "rougeL"
 
                 scorer = rouge_scorer.RougeScorer([rouge_type], use_stemmer=True)
                 scores = scorer.score(reference, candidate)
@@ -300,13 +327,14 @@ class TextSimilarityGrader(ConfigurableGrader):
         if SENTENCE_TRANSFORMERS_AVAILABLE:
             try:
                 import numpy as np
-                embedding_model = getattr(self, 'embedding_model', self.DEFAULT_CONFIG['embedding_model'])
+
+                embedding_model = getattr(self, "embedding_model", self.DEFAULT_CONFIG["embedding_model"])
                 model = SentenceTransformer(embedding_model)
                 embeddings = model.encode([text1, text2])
 
                 return float(
-                    np.dot(embeddings[0], embeddings[1]) /
-                    (np.linalg.norm(embeddings[0]) * np.linalg.norm(embeddings[1]))
+                    np.dot(embeddings[0], embeddings[1])
+                    / (np.linalg.norm(embeddings[0]) * np.linalg.norm(embeddings[1]))
                 )
             except Exception:
                 return self._tfidf_cosine_similarity(text1, text2)
@@ -346,6 +374,7 @@ class TextSimilarityGrader(ConfigurableGrader):
 
     def _levenshtein_similarity(self, text1: str, text2: str) -> float:
         """Calculate normalized Levenshtein similarity."""
+
         def levenshtein_distance(s1, s2):
             if len(s1) < len(s2):
                 return levenshtein_distance(s2, s1)
@@ -376,37 +405,25 @@ class TextSimilarityGrader(ConfigurableGrader):
 class ExactMatchGrader(StringCheckGrader):
     """Simple exact match grader."""
 
-    DEFAULT_CONFIG = {
-        **StringCheckGrader.DEFAULT_CONFIG,
-        "operation": "eq"
-    }
+    DEFAULT_CONFIG = {**StringCheckGrader.DEFAULT_CONFIG, "operation": "eq"}
 
 
 class ContainsGrader(StringCheckGrader):
     """Check if output contains reference text."""
 
-    DEFAULT_CONFIG = {
-        **StringCheckGrader.DEFAULT_CONFIG,
-        "operation": "like"
-    }
+    DEFAULT_CONFIG = {**StringCheckGrader.DEFAULT_CONFIG, "operation": "like"}
 
 
 class StartsWithGrader(StringCheckGrader):
     """Check if output starts with reference text."""
 
-    DEFAULT_CONFIG = {
-        **StringCheckGrader.DEFAULT_CONFIG,
-        "operation": "startswith"
-    }
+    DEFAULT_CONFIG = {**StringCheckGrader.DEFAULT_CONFIG, "operation": "startswith"}
 
 
 class RegexGrader(StringCheckGrader):
     """Regex pattern matching grader."""
 
-    DEFAULT_CONFIG = {
-        **StringCheckGrader.DEFAULT_CONFIG,
-        "operation": "regex"
-    }
+    DEFAULT_CONFIG = {**StringCheckGrader.DEFAULT_CONFIG, "operation": "regex"}
 
 
 class MultiFieldGrader(ConfigurableGrader):
@@ -416,7 +433,7 @@ class MultiFieldGrader(ConfigurableGrader):
 
     DEFAULT_CONFIG = {
         "field_graders": {},  # Dict of field_name -> grader_config
-        "aggregation": "average"  # "average", "min", "max", "all_pass"
+        "aggregation": "average",  # "average", "min", "max", "all_pass"
     }
 
     def __init__(self, **kwargs):
@@ -424,7 +441,7 @@ class MultiFieldGrader(ConfigurableGrader):
         self.graders = {}
 
         # Initialize individual graders for each field
-        field_graders = getattr(self, 'field_graders', self.DEFAULT_CONFIG['field_graders'])
+        field_graders = getattr(self, "field_graders", self.DEFAULT_CONFIG["field_graders"])
         for field_name, grader_config in field_graders.items():
             grader_type = grader_config.get("type", "StringCheckGrader")
             grader_params = grader_config.get("params", {})
@@ -447,7 +464,7 @@ class MultiFieldGrader(ConfigurableGrader):
             return 0.0 if trace is None else False
 
         # Aggregate scores
-        aggregation = getattr(self, 'aggregation', self.DEFAULT_CONFIG['aggregation'])
+        aggregation = getattr(self, "aggregation", self.DEFAULT_CONFIG["aggregation"])
         if aggregation == "average":
             result = sum(scores) / len(scores)
         elif aggregation == "min":
@@ -473,12 +490,7 @@ def create_exact_match(pred: str = "output", ideal: str = "answer") -> ExactMatc
 
 def create_fuzzy_match(threshold: float = 0.8, pred: str = "output", ideal: str = "answer") -> TextSimilarityGrader:
     """Create a fuzzy match grader."""
-    return TextSimilarityGrader(
-        metric="fuzzy_match",
-        threshold=threshold,
-        pred=pred,
-        ideal=ideal
-    )
+    return TextSimilarityGrader(metric="fuzzy_match", threshold=threshold, pred=pred, ideal=ideal)
 
 
 def create_contains_check(pred: str = "output", ideal: str = "answer") -> ContainsGrader:

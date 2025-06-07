@@ -56,11 +56,6 @@ Contains = ContainsGrader
 LLMJudge = ScoreModelGrader
 BinaryChoice = BinaryClassificationGrader
 LikertScale = LikertScaleGrader
-Precision = PrecisionGrader
-Recall = RecallGrader
-F1Score = F1Grader
-Accuracy = AccuracyGrader
-IntentClassifier = IntentClassificationGrader
 
 # Add aliases to exports
 __all__.extend(
