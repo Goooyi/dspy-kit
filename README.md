@@ -22,6 +22,8 @@ dspy-kit provides a batteries-included, easily extensible toolkit specifically d
 - **🧩 Composable Design**: Mix and match optimizable graders with weighted combinations
 - **🛡️ Edge Case Handling**: Built-in support for out-of-scope queries, safety checks, and error handling
 - **🔧 Trace-Aware**: Leverage DSPy's trace information for intermediate step validation
+- **🌍 i18n Support**: Multi-language template system with cultural adaptations
+- **📝 Modular Prompt Templates**: YAML + Jinja2 templates with inheritance and validation
 
 ## 🚀 Quick Start
 
@@ -42,8 +44,8 @@ pip install -e .
 ```python
 import dspy
 from dspy_kit import (
-    SemanticSimilarityGrader, 
-    DSPyFactualAccuracyGrader, 
+    SemanticSimilarityGrader,
+    DSPyFactualAccuracyGrader,
     create_dspy_qa_grader
 )
 
@@ -65,7 +67,7 @@ qa_system = QASystem()
 # Works with ANY field names - no restructuring needed!
 grader = create_dspy_qa_grader(
     answer_field="detailed_answer",    # Matches your program output
-    question_field="user_question",    # Matches your dataset  
+    question_field="user_question",    # Matches your dataset
     expected_field="reference_answer"  # Matches your dataset
 )
 
@@ -113,7 +115,7 @@ regex_match = StringCheckGrader(operation="regex")
 ```python
 from dspy_kit import (
     SemanticSimilarityGrader,
-    DSPyFactualAccuracyGrader, 
+    DSPyFactualAccuracyGrader,
     DSPyRelevanceGrader,
     HelpfulnessGrader,
     DSPySafetyGrader
@@ -195,7 +197,7 @@ example = {
 # Grader adapts to YOUR field names
 support_grader = create_dspy_customer_support_grader(
     response_field="agent_reply",       # Matches your data
-    query_field="customer_inquiry",     # Matches your data  
+    query_field="customer_inquiry",     # Matches your data
     reference_field="ideal_solution"    # Matches your data
 )
 
@@ -224,7 +226,7 @@ research_grader = SemanticSimilarityGrader(
     ideal_field="ground_truth_annotation"
 )
 
-# Production API domain  
+# Production API domain
 api_grader = SemanticSimilarityGrader(
     pred_field="api_response",
     ideal_field="expected_output"
@@ -387,12 +389,12 @@ classification_metric = CompositeDSPyGrader({
 # For generation tasks with custom field names
 generation_metric = CompositeDSPyGrader({
     "relevance": (DSPyRelevanceGrader(
-        pred_field="generated_text", 
+        pred_field="generated_text",
         query_field="prompt"
     ), 0.3),
     "factuality": (DSPyFactualAccuracyGrader(
         pred_field="generated_text",
-        ideal_field="reference_text"  
+        ideal_field="reference_text"
     ), 0.4),
     "safety": (DSPySafetyGrader(pred_field="generated_text"), 0.3)
 })
@@ -410,9 +412,9 @@ def test_grader():
 
     # Test cases with your data format
     test_cases = [
-        ({"expected_output": "Paris is the capital"}, 
+        ({"expected_output": "Paris is the capital"},
          {"model_response": "Paris is France's capital"}, "Should score high"),
-        ({"expected_output": "Paris is the capital"}, 
+        ({"expected_output": "Paris is the capital"},
          {"model_response": "London is the capital"}, "Should score low"),
         ({}, {"model_response": "Some text"}, "Should handle missing fields")
     ]
@@ -451,6 +453,8 @@ black --check .
 - [Tutorial Guide](docs/tutorials/)
 - [Domain-Specific Examples](examples/)
 - [Best Practices Guide](docs/guides/best-practices.md)
+- [i18n Guide](docs/i18n_guide.md)
+- [Template System Guide](docs/template_guide.md)
 
 ## 🎯 Roadmap
 
@@ -475,7 +479,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 💡 Key Innovation
 
-**Before dspy-kit**: Choose between flexible field handling OR DSPy optimization  
+**Before dspy-kit**: Choose between flexible field handling OR DSPy optimization
 **With dspy-kit**: Get both flexible fields AND full DSPy optimization capabilities
 
 This eliminates the need to restructure your data to match evaluation library expectations while maintaining all the benefits of DSPy's powerful optimization framework.
@@ -483,7 +487,7 @@ This eliminates the need to restructure your data to match evaluation library ex
 ## 🚀 Future Plans
 
 - [x] **Revolutionary Grader Design**: Combines DSPy optimization with flexible field extraction
-- [ ] **Synthetic Data Generation**: Constitutional AI and alignment-based data generation  
+- [ ] **Synthetic Data Generation**: Constitutional AI and alignment-based data generation
 - [ ] **Red Teaming**: Adversarial testing and safety evaluation
 - [ ] **Schema Validation**: Optional validation that required fields exist
 - [ ] **Performance Optimization**: Caching and batch processing improvements
@@ -498,3 +502,60 @@ This eliminates the need to restructure your data to match evaluation library ex
 ---
 
 **Made with ❤️ for the DSPy community**
+
+## Docs
+
+#### Overview
+
+```
+/Users/yigao/Developer/Personal/dspy-kit/
+├── demo_overview.py                    # Complete system demo
+├── demo_template_inheritance.py        # Inheritance demo
+├── demo_tool_integration.py            # Tool integration demo
+├── demo_i18n_templates.py              # i18n system demo
+```
+
+Test Files (Validate Implementation)
+```
+├── test_migration.py                   # Migration testing
+├── test_inheritance.py                 # Inheritance testing
+├── test_query_info_migration.py        # Real prompt migration
+├── test_rendered_output.py             # Output validation
+├── test_i18n_system.py                # i18n testing
+```
+
+#### Example Files (Usage Patterns)
+```
+├── examples/
+│   ├── chinese_chat_adapter_comparison.py
+│   ├── simple_chinese_adapter.py
+│   ├── i18n_chinese_ecommerce.py
+│   ├── complex_routing_template_demo.py
+│   └── simple_routing_usage.py
+```
+
+#### Template Files (YAML Examples)
+```
+├── templates/
+│   ├── query_item_info_template.yaml   # Migrated template
+│   ├── intent_classification_template.yaml
+│   ├── ecommerce_support_with_tools.yaml
+│   └── examples/
+│       └── customer_support_router.yaml
+```
+
+---
+
+## Key Files to Review First
+
+1. **Core Implementation**
+   - `/dspy-kit/dspy_kit/templates/core/template.py` - The heart of the system
+   - `/dspy-kit/dspy_kit/templates/adapters/dspy_adapter.py` - DSPy integration
+
+2. **Critical Features**
+   - `/dspy-kit/dspy_kit/templates/utils/migrator.py` - Migration logic
+   - `/dspy-kit/dspy_kit/templates/i18n/adapter.py` - i18n system
+
+3. **Integration Tests**
+   - `/dspy-kit/final_demo.py` - Shows everything working together
+   - `/dspy-kit/test_query_info_migration.py` - Real-world validation
